@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { SearchX } from 'lucide-react';
 import type { Item, Filters } from '@/lib/types';
 import { normalizeSize } from '@/lib/sizes';
@@ -107,11 +108,17 @@ export default function ResultsGrid({
             ? `All ${items.length} results were filtered out. Try widening your price range or clearing a filter.`
             : 'Try a different search term, or check that your platform API keys are configured.'}
         </p>
-        {filtered && onClearFilters && (
-          <button type="button" onClick={onClearFilters} className="btn btn-secondary mt-1">
-            Clear filters
-          </button>
-        )}
+        <div className="mt-1 flex flex-wrap justify-center gap-2">
+          {filtered && onClearFilters && (
+            <button type="button" onClick={onClearFilters} className="btn btn-secondary">
+              Clear filters
+            </button>
+          )}
+          {/* Without this the no-results state is a dead end. */}
+          <Link href="/" className="btn btn-secondary">
+            New search
+          </Link>
+        </div>
       </div>
     );
   }

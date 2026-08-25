@@ -17,7 +17,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
         setTimeout(() => reject(new Error('timeout')), ms)
       ),
     ]) as T;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -27,10 +27,10 @@ export async function searchAllPlatforms(query: string): Promise<Item[]> {
     withTimeout(scrapeEbay(query), PLATFORM_TIMEOUT),
     withTimeout(scrapeGrailed(query), PLATFORM_TIMEOUT),
     withTimeout(scrapeVinted(query), PLATFORM_TIMEOUT),
-    withTimeout(scrapeDepop(query), PLATFORM_TIMEOUT),
+    withTimeout(scrapeDepop(), PLATFORM_TIMEOUT),
     withTimeout(scrapePoshmark(query), PLATFORM_TIMEOUT),
-    withTimeout(scrapeFacebook(query), PLATFORM_TIMEOUT),
-    withTimeout(scrapeVestiaire(query), PLATFORM_TIMEOUT),
+    withTimeout(scrapeFacebook(), PLATFORM_TIMEOUT),
+    withTimeout(scrapeVestiaire(), PLATFORM_TIMEOUT),
   ]);
 
   const allItems: Item[] = [];

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from './SessionProvider';
 import { AlertTriangle } from 'lucide-react';
 
 interface AuthFormProps {
@@ -16,12 +18,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [confirm, setConfirm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const router = useRouter();
+  const { refresh } = useSession();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setNotice(null);
 
     if (isRegister) {
       if (password !== confirm) {
@@ -35,11 +37,29 @@ export default function AuthForm({ mode }: AuthFormProps) {
     }
 
     setIsSubmitting(true);
-    // Auth is not wired up yet — say so plainly instead of failing silently.
-    setNotice(
-      'Accounts aren’t connected yet. Add your Supabase keys to .env.local to enable sign-in.',
-    );
-    setIsSubmitting(false);
+    try {
+      const res = await fetch(`/api/auth/${isRegister ? 'register' : 'login'}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data?.error ?? 'Something went wrong. Try again.');
+        return;
+      }
+
+      // Pull the new session into context before navigating, so the nav
+      // renders the signed-in state immediately.
+      await refresh();
+      router.push('/for-you');
+      router.refresh();
+    } catch {
+      setError('Could not reach the server. Check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -62,15 +82,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
         >
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span>{error}</span>
-        </div>
-      )}
-
-      {notice && (
-        <div
-          role="status"
-          className="mb-5 rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--bg-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-muted)]"
-        >
-          {notice}
         </div>
       )}
 

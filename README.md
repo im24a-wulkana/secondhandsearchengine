@@ -25,7 +25,7 @@ A modern web application that aggregates listings from 7 major secondhand clothi
   - Platform (multi-select)
 
 - **For You feed** - Personalized listings drawn from your recent searches.
-  Runs entirely in the browser; no account required.
+  Requires an account.
 
 - **Sorting** - Sort by:
   - Relevance (default)
@@ -46,17 +46,18 @@ A modern web application that aggregates listings from 7 major secondhand clothi
   - Visible focus rings, labelled controls, skip-to-content link
   - Honors `prefers-reduced-motion`
 
-### 🔐 Authentication & Personalization (Ready for integration)
-- Email/password authentication via Supabase
-- Save favorite items
-- Saved searches with quick recall
-- User-scoped data with Row Level Security
+### 🔐 Accounts
+- Email + password sign-up and sign-in (bcrypt, httpOnly signed session cookie)
+- Saved listings, scoped per user
+- **For you** feed — members only, gated on both the page and the API
+- Recent searches under the search bar (per browser, works signed out)
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router, Turbopack, React 19.2)
 - **Styling**: Tailwind CSS v4 with CSS-variable design tokens
-- **Database & Auth**: Supabase (PostgreSQL + Auth) — *not yet wired up*
+- **Database**: Neon (serverless Postgres over HTTP)
+- **Auth**: email + password, bcrypt hashes, signed JWT session cookie
 - **Scraping**:
   - Axios + Cheerio for static pages
   - Playwright for JavaScript-rendered pages
@@ -227,6 +228,18 @@ The ranking in `lib/recommend.ts`:
    producing a blended feed rather than concatenated searches.
 
 Only searches that returned results are recorded, so typos don't pollute the feed.
+
+## Deploying
+
+See **[DEPLOY.md](DEPLOY.md)** for step-by-step Neon and Vercel setup.
+
+Quick version:
+
+```bash
+cp .env.example .env.local     # then fill in DATABASE_URL and AUTH_SECRET
+npm run db:setup               # creates tables in Neon
+npm run dev
+```
 
 ## Getting Started
 

@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import SearchBar from '@/components/SearchBar';
+import SearchHistory from '@/components/SearchHistory';
+import PopularSearches from '@/components/PopularSearches';
 import { PLATFORMS, PLATFORM_IDS } from '@/lib/platforms';
 
+/** Server-rendered fallback until /api/popular responds. */
 const SUGGESTIONS = [
   'Carhartt Detroit jacket',
   'Levi’s 501 vintage',
@@ -48,18 +51,9 @@ export default function Home() {
               <SearchBar autoFocus />
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-xs text-[var(--text-faint)]">Popular:</span>
-              {SUGGESTIONS.map((term) => (
-                <Link
-                  key={term}
-                  href={`/search?q=${encodeURIComponent(term)}`}
-                  className="rounded-[var(--r-pill)] border border-[var(--hairline)] px-3 py-1 text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                >
-                  {term}
-                </Link>
-              ))}
-            </div>
+            <PopularSearches initial={SUGGESTIONS} />
+
+            <SearchHistory className="mx-auto mt-8 max-w-xl text-left" />
           </div>
         </section>
 

@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchAllPlatforms } from '@/lib/scrapers';
 import { rankByRelevance } from '@/lib/relevance';
+import { getSql } from '@/lib/db';
+import { getSessionUser } from '@/lib/auth';
+
+/**
+ * Records the search so the homepage "Popular" row reflects real usage.
+ * Fire-and-forget: logging must never slow down or fail a search.
+ */
+async function logSearch(query: string, resultCount: number): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  try {
+    const user = await getSessionUser();
+    await sql`
+      insert into searches (user_id, query, query_key, result_count)
+      values (${user?.id ?? null}, ${query}, ${query.toLowerCase()}, ${resultCount})
+    `;
+  } catch (error) {
+    console.error('Search logging failed:', error);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +42,10 @@ export async function POST(request: NextRequest) {
     const { kept, removed } = strict
       ? rankByRelevance(items, trimmed)
       : { kept: items, removed: 0 };
+
+    // Awaited rather than floated: serverless functions can be frozen the
+    // moment a response is returned, which would drop an in-flight insert.
+    await logSearch(trimmed, kept.length);
 
     return NextResponse.json({
       success: true,

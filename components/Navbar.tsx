@@ -1,41 +1,56 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Heart, LogOut, Menu, Sparkles, X } from 'lucide-react';
+import { Heart, LogOut, Menu, Search, Sparkles, X } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { useSession } from './SessionProvider';
 
-interface NavbarProps {
-  isAuthenticated?: boolean;
-  onLogout?: () => void;
-}
-
-export default function Navbar({ isAuthenticated = false, onLogout }: NavbarProps) {
+export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, isLoading, signOut } = useSession();
 
-  // Available signed in or out — the feed runs off local search history.
-  const forYou = (
-    <Link href="/for-you" className="btn btn-ghost">
-      <Sparkles size={16} />
-      For you
-    </Link>
-  );
-
-  const links = isAuthenticated ? (
-    <>
-      {forYou}
-      <Link href="/favorites" className="btn btn-ghost">
-        <Heart size={16} />
-        Saved
+  // Marks the current section so the nav shows where you are.
+  const navLink = (href: string, label: string, icon: React.ReactNode) => {
+    const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+    return (
+      <Link
+        href={href}
+        aria-current={active ? 'page' : undefined}
+        className={`btn btn-ghost ${active ? '!text-[var(--accent)]' : ''}`}
+      >
+        {icon}
+        {label}
       </Link>
-      <button type="button" onClick={onLogout} className="btn btn-ghost">
+    );
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
+    router.refresh();
+  };
+
+  // Render nothing account-specific until the session check settles, so the
+  // nav doesn't flash "Sign in" at someone who is already signed in.
+  const links = isLoading ? (
+    navLink('/search', 'Search', <Search size={16} />)
+  ) : user ? (
+    <>
+      {navLink('/search', 'Search', <Search size={16} />)}
+      {navLink('/for-you', 'For you', <Sparkles size={16} />)}
+      {navLink('/favorites', 'Saved', <Heart size={16} />)}
+      <button type="button" onClick={handleSignOut} className="btn btn-ghost">
         <LogOut size={16} />
         Sign out
       </button>
     </>
   ) : (
     <>
-      {forYou}
+      {navLink('/search', 'Search', <Search size={16} />)}
       <Link href="/login" className="btn btn-ghost">
         Sign in
       </Link>

@@ -3,6 +3,7 @@ import { searchAllPlatforms } from '@/lib/scrapers';
 import type { Item } from '@/lib/types';
 import type { SearchRecord } from '@/lib/history';
 import { buildTermProfile, topInterests, rankItems, diversify } from '@/lib/recommend';
+import { getSessionUser } from '@/lib/auth';
 
 /** How many past searches to actually spend network requests on. */
 const MAX_INTERESTS = 3;
@@ -31,6 +32,12 @@ function parseHistory(value: unknown): SearchRecord[] {
 
 export async function POST(request: Request) {
   try {
+    // For You is a members feature; the page gate alone wouldn't protect this.
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Sign in to use your feed.' }, { status: 401 });
+    }
+
     const body: Body = await request.json();
     const history = parseHistory(body.history);
 

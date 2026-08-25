@@ -35,14 +35,25 @@ export async function scrapeEbay(query: string): Promise<Item[]> {
     const data = await response.json();
     const results = data.itemSummaries || [];
 
-    return results.map((item: any) => ({
+    type EbayItem = {
+      itemId?: string;
+      title?: string;
+      price?: { value?: string; currency?: string };
+      conditionId?: string;
+      image?: { imageUrl?: string };
+      thumbnailImages?: { imageUrl?: string }[];
+      itemWebUrl?: string;
+      itemCreationDate?: string;
+    };
+
+    return results.map((item: EbayItem) => ({
       id: `ebay-${item.itemId}`,
       platform: 'ebay' as const,
-      title: item.title,
+      title: item.title ?? 'Untitled listing',
       price: item.price?.value ? parseFloat(item.price.value) : 0,
       currency: item.price?.currency || 'USD',
-      size: extractSize(item.title),
-      condition: mapEbayCondition(item.conditionId),
+      size: extractSize(item.title ?? ''),
+      condition: mapEbayCondition(item.conditionId ?? ''),
       image_url: item.image?.imageUrl || item.thumbnailImages?.[0]?.imageUrl || '',
       external_url: item.itemWebUrl || '',
       listed_at: item.itemCreationDate || null,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import ThemeScript from "@/components/ThemeScript";
+import SessionProvider from "@/components/SessionProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -42,7 +43,7 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

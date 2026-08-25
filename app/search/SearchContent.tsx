@@ -2,11 +2,13 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Filter, SearchX } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, ArrowLeft, Filter, SearchX } from 'lucide-react';
 import type { Item, Filters, Platform } from '@/lib/types';
 import FilterPanel, { countActiveFilters } from '@/components/FilterPanel';
 import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGrid';
 import SearchBar from '@/components/SearchBar';
+import SearchHistory from '@/components/SearchHistory';
 import ListingDetail from '@/components/ListingDetail';
 import { PLATFORMS } from '@/lib/platforms';
 import { recordSearch } from '@/lib/history';
@@ -117,14 +119,31 @@ export default function SearchContent() {
         <div className="mt-8">
           <SearchBar autoFocus />
         </div>
+        <SearchHistory className="mt-8 text-left" />
+        <Link
+          href="/"
+          className="mt-6 inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] transition hover:text-[var(--accent)]"
+        >
+          <ArrowLeft size={15} />
+          Back to home
+        </Link>
       </main>
     );
   }
 
   return (
     <main id="main" className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
+      <Link
+        href="/"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] transition hover:text-[var(--accent)]"
+      >
+        <ArrowLeft size={15} />
+        Back to home
+      </Link>
+
       <div className="mb-8 max-w-2xl">
         <SearchBar initialQuery={query} size="md" />
+        <SearchHistory className="mt-4" limit={6} />
       </div>
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

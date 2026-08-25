@@ -1,9 +1,9 @@
 /**
  * Recent-search history, stored per browser.
  *
- * There's no auth yet, so this lives in localStorage rather than Supabase.
- * Every read is defensive: private mode, cleared storage, and hand-edited
- * values all have to degrade to "no history" instead of throwing.
+ * Stored per browser rather than per account, so it works signed out and
+ * needs no round trip to render. Every read is defensive: private mode,
+ * cleared storage, and hand-edited values all degrade to "no history".
  */
 
 const KEY = 'thrifthound:searches';
@@ -115,6 +115,19 @@ export function recordSearch(query: string): SearchRecord[] {
   }
   notify();
   return next;
+}
+
+/** Drops a single remembered query, matched case-insensitively. */
+export function removeSearch(query: string): void {
+  if (typeof window === 'undefined') return;
+  const normalized = query.trim().toLowerCase();
+  const next = readHistory().filter((r) => r.query.toLowerCase() !== normalized);
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(next));
+  } catch {
+    // Blocked storage — nothing to persist, but still notify subscribers.
+  }
+  notify();
 }
 
 export function clearHistory(): void {
