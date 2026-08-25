@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 
-export const metadata = { title: 'Create account · Onerail' };
+export const metadata = { title: 'Create account · OneRail' };
 
 export default function RegisterPage() {
   return (

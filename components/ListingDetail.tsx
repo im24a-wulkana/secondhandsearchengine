@@ -296,7 +296,7 @@ export default function ListingDetail({
             </div>
 
             <p className="text-xs text-[var(--text-faint)]">
-              Listed and sold by a third-party seller on {platform.label}. Onerail handles no
+              Listed and sold by a third-party seller on {platform.label}. OneRail handles no
               part of the purchase.
             </p>
           </div>

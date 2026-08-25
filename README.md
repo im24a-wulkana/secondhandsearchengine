@@ -1,4 +1,4 @@
-# 🔍 Onerail
+# 🔍 OneRail
 
 Every secondhand rail, searched at once — one query across 7 marketplaces,
 normalised into a single ranked grid.

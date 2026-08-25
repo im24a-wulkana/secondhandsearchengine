@@ -19,7 +19,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Onerail",
+  title: "OneRail",
   description:
     "Search Grailed, Vinted, Depop, eBay, Poshmark, Facebook Marketplace, and Vestiaire Collective in one place.",
 };

@@ -67,7 +67,7 @@ export default function Navbar() {
           href="/"
           className="font-display text-lg font-semibold tracking-tight text-[var(--text)]"
         >
-          One<span className="text-[var(--accent)]">rail</span>
+          One<span className="text-[var(--accent)]">Rail</span>
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">

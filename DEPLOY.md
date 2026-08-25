@@ -1,4 +1,4 @@
-# Deploying Onerail
+# Deploying OneRail
 
 Two services: **Neon** for Postgres, **Vercel** for hosting.
 
