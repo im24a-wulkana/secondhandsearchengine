@@ -1,9 +1,9 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowLeft, Filter, SearchX } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Filter, Heart, SearchX } from 'lucide-react';
 import type { Item, Filters, Platform } from '@/lib/types';
 import FilterPanel, { countActiveFilters } from '@/components/FilterPanel';
 import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGrid';
@@ -12,6 +12,7 @@ import SearchHistory from '@/components/SearchHistory';
 import ListingDetail from '@/components/ListingDetail';
 import { PLATFORMS } from '@/lib/platforms';
 import { recordSearch } from '@/lib/history';
+import { useFavorites } from '@/lib/useFavorites';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'relevance', label: 'Relevance' },
@@ -29,7 +30,6 @@ export default function SearchContent() {
   const [filters, setFilters] = useState<Filters>({});
   const [sortBy, setSortBy] = useState<SortKey>('relevance');
   const [error, setError] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   // Number of loosely-matching listings the relevance filter removed.
   const [filteredOut, setFilteredOut] = useState(0);
   const [strict, setStrict] = useState(true);
@@ -102,9 +102,7 @@ export default function SearchContent() {
     [items, filters, sortBy],
   );
 
-  const toggleFavorite = useCallback((item: Item) => {
-    setFavorites((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
-  }, []);
+  const { favorites, toggleFavorite, requiresAuth, dismissAuthPrompt } = useFavorites();
 
   const activeFilters = countActiveFilters(filters);
 
@@ -256,6 +254,46 @@ export default function SearchContent() {
           />
         </div>
       </div>
+
+
+      {requiresAuth && (
+        <div className="fixed inset-0 z-[75] flex items-end justify-center sm:items-center sm:p-6">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={dismissAuthPrompt}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="save-prompt-title"
+            className="relative w-full max-w-sm rounded-t-[var(--r-lg)] border border-[var(--hairline)] bg-[var(--bg)] p-6 text-center shadow-[var(--shadow-lg)] sm:rounded-[var(--r-lg)]"
+          >
+            <Heart size={26} className="mx-auto text-[var(--accent)]" strokeWidth={1.5} />
+            <h2 id="save-prompt-title" className="mt-3 font-display text-xl">
+              Sign in to save listings
+            </h2>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              Create a free account to keep listings from every marketplace in one place.
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <Link href="/register" className="btn btn-primary flex-1">
+                Create account
+              </Link>
+              <Link href="/login" className="btn btn-secondary flex-1">
+                Sign in
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={dismissAuthPrompt}
+              className="btn btn-ghost mt-2 w-full text-sm"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
       <ListingDetail
         item={openItem}

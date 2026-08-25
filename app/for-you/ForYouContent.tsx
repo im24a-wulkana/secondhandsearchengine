@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { AlertTriangle, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
 import type { Item } from '@/lib/types';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/lib/history';
 import ItemCard from '@/components/ItemCard';
 import ListingDetail from '@/components/ListingDetail';
+import { useFavorites } from '@/lib/useFavorites';
 
 export default function ForYouContent() {
   // Reading through the store keeps React in sync with localStorage without
@@ -26,13 +27,10 @@ export default function ForYouContent() {
   const [interests, setInterests] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [reloadKey, setReloadKey] = useState(0);
   const [openItem, setOpenItem] = useState<Item | null>(null);
 
-  const toggleFavorite = useCallback((item: Item) => {
-    setFavorites((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
-  }, []);
+  const { favorites, toggleFavorite } = useFavorites();
 
   // Refetch when the set of remembered queries changes, or on manual refresh.
   const historyKey = history.map((r) => `${r.query}:${r.count}`).join('|');
