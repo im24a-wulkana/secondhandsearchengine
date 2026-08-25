@@ -1,26 +1,384 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Design tokens
+   Light ("paper") is the base palette; dark ("ink") overrides tokens only.
+   Every color is defined on bare :root first so the un-stamped
+   (system-theme) document always resolves a complete set.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Ground + surfaces */
+  --bg: #faf7f2;
+  --bg-subtle: #f2ede4;
+  --surface: #ffffff;
+  --surface-raised: #fffdfa;
+  --hairline: #e3dbcd;
+  --hairline-strong: #d2c7b4;
+
+  /* Text */
+  --text: #1b1815;
+  --text-muted: #6b6154;
+  --text-faint: #938876;
+
+  /* Accent — marigold, from vintage price tags */
+  --accent: #b8730f;
+  --accent-hover: #975d08;
+  --accent-contrast: #ffffff;
+  --accent-wash: #fdf3e2;
+
+  /* Semantic */
+  --ok: #2f7d4f;
+  --warn: #a86a10;
+  --danger: #b3392c;
+  --danger-wash: #fdecea;
+
+  /* Focus */
+  --focus: #b8730f;
+
+  /* Elevation — soft, warm-tinted */
+  --shadow-sm: 0 1px 2px rgba(58, 45, 28, 0.06);
+  --shadow-md: 0 4px 16px -4px rgba(58, 45, 28, 0.12);
+  --shadow-lg: 0 12px 32px -8px rgba(58, 45, 28, 0.18);
+
+  /* Type */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+
+  /* Geometry */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/* System dark — guarded so an explicit light choice still wins */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: #12100e;
+    --bg-subtle: #171412;
+    --surface: #1c1916;
+    --surface-raised: #232019;
+    --hairline: #2c2621;
+    --hairline-strong: #3d352d;
+
+    --text: #f4efe7;
+    --text-muted: #a89e90;
+    --text-faint: #7d7365;
+
+    --accent: #e8a33d;
+    --accent-hover: #f2b45a;
+    --accent-contrast: #1b1512;
+    --accent-wash: #2a2015;
+
+    --ok: #63b981;
+    --warn: #e0a542;
+    --danger: #e8776a;
+    --danger-wash: #2c1a17;
+
+    --focus: #e8a33d;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
   }
 }
 
+/* Explicit dark choice wins over a light OS */
+:root[data-theme="dark"] {
+  --bg: #12100e;
+  --bg-subtle: #171412;
+  --surface: #1c1916;
+  --surface-raised: #232019;
+  --hairline: #2c2621;
+  --hairline-strong: #3d352d;
+
+  --text: #f4efe7;
+  --text-muted: #a89e90;
+  --text-faint: #7d7365;
+
+  --accent: #e8a33d;
+  --accent-hover: #f2b45a;
+  --accent-contrast: #1b1512;
+  --accent-wash: #2a2015;
+
+  --ok: #63b981;
+  --warn: #e0a542;
+  --danger: #e8776a;
+  --danger-wash: #2c1a17;
+
+  --focus: #e8a33d;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* Expose tokens to Tailwind utilities */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-wash: var(--accent-wash);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+/* Tailwind v4's Preflight already handles the reset (box-sizing, margin,
+   padding). A hand-rolled `* { margin: 0 }` here would out-specify utilities
+   like `mx-auto` and silently break every centered container. */
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
+}
+
+@layer components {
+  /* Rides along with the `font-display` utility on headings, so it never
+     competes with Tailwind's type utilities the way a bare h1,h2,h3 would. */
+  .font-display {
+    font-weight: 600;
+    line-height: 1.12;
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+
+  /* Prices, counts, any digits that line up */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Small uppercase utility labels */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+}
+
+/* ==========================================================================
+   Focus — visible, token-driven, never removed
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Only suppress the ring for pointer users who didn't tab */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================================================
+   Reusable primitives
+
+   These live in the `components` layer so single-class utilities always win.
+   Outside a layer, `.btn { display: inline-flex }` would tie `md:hidden` on
+   specificity and beat it on source order, breaking responsive visibility.
+   ========================================================================== */
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+  }
+
+  .field {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    color: var(--text);
+    font: inherit;
+    padding: 0.625rem 0.875rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .field::placeholder {
+    color: var(--text-faint);
+  }
+
+  .field:hover {
+    border-color: var(--hairline-strong);
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--r-md);
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 550;
+    padding: 0.625rem 1.125rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+      color 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-contrast);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border-color: var(--hairline);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--hairline-strong);
+    background: var(--bg-subtle);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--bg-subtle);
+    color: var(--text);
+  }
+}
+
+/* ==========================================================================
+   Motion
+   ========================================================================== */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@layer components {
+  .rise {
+    animation: rise 0.36s cubic-bezier(0.22, 0.68, 0.35, 1) backwards;
+  }
+
+  /* Skeleton block with a travelling sheen */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-subtle);
+    border-radius: var(--r-sm);
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--text) 7%, transparent),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton::after {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Clamp helpers */
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Custom scrollbars inside panels */
+  .thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline-strong) transparent;
+  }
 }
