@@ -21,7 +21,7 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "OneRail",
   description:
-    "Search Grailed, Vinted, Depop, eBay, Poshmark, Facebook Marketplace, and Vestiaire Collective in one place.",
+    "Search Grailed, Vinted, Poshmark and Mercari Japan in one place — one query, every secondhand rail.",
 };
 
 export default function RootLayout({

@@ -1,21 +1,23 @@
 # 🔍 OneRail
 
-Every secondhand rail, searched at once — one query across 7 marketplaces,
-normalised into a single ranked grid.
+Every secondhand rail, searched at once — one query across every live
+marketplace, normalised into a single ranked grid.
 
 **Run locally:** `npm run dev` → http://localhost:3000
 
 ## Features
 
 ### ✨ Core Features
-- **Unified Search** - Search across 7 platforms simultaneously
+- **Unified Search** - One query across every live marketplace at once
   - Grailed
   - Vinted
-  - Depop
-  - eBay
   - Poshmark
-  - Facebook Marketplace
-  - Vestiaire Collective
+  - Mercari Japan (titles translated, prices converted to USD)
+
+  eBay, Depop, Vestiaire and Facebook Marketplace are wired up but inactive —
+  see [status](#current-status-of-the-data-layer). The UI derives its copy and
+  filters from `PLATFORMS[].live` in `lib/platforms.ts`, so nothing advertises
+  a marketplace that can't return results.
 
 - **Smart Filtering** - Filter results by:
   - Price range (min/max)
@@ -608,7 +610,7 @@ specificity and wins on source order — which silently breaks `mx-auto`,
 ## Performance Notes
 
 - **Timeout**: 8 seconds per platform
-- **Parallel Requests**: All 7 platforms queried simultaneously
+- **Parallel Requests**: Every live platform queried simultaneously
 - **Caching**: Consider Redis for frequently searched queries
 - **Rate Limiting**: Recommended on API endpoints
 - **Image Optimization**: Using Next.js Image component with CDN

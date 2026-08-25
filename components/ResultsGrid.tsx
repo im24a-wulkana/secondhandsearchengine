@@ -106,7 +106,7 @@ export default function ResultsGrid({
         <p className="max-w-sm text-sm text-[var(--text-muted)]">
           {filtered
             ? `All ${items.length} results were filtered out. Try widening your price range or clearing a filter.`
-            : 'Try a different search term, or check that your platform API keys are configured.'}
+            : 'Try a different search term — a brand name usually works better than a description.'}
         </p>
         <div className="mt-1 flex flex-wrap justify-center gap-2">
           {filtered && onClearFilters && (

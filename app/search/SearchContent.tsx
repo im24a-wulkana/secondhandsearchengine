@@ -10,7 +10,7 @@ import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGri
 import SearchBar from '@/components/SearchBar';
 import SearchHistory from '@/components/SearchHistory';
 import ListingDetail from '@/components/ListingDetail';
-import { PLATFORMS } from '@/lib/platforms';
+import { PLATFORMS, LIVE_PLATFORM_COUNT, spellNumber } from '@/lib/platforms';
 import { recordSearch } from '@/lib/history';
 import { useFavorites } from '@/lib/useFavorites';
 
@@ -112,7 +112,8 @@ export default function SearchContent() {
         <SearchX size={30} className="mx-auto text-[var(--text-faint)]" strokeWidth={1.5} />
         <h1 className="mt-4 font-display text-2xl">What are you hunting for?</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Enter a brand, garment, or size to search all seven marketplaces.
+          Enter a brand, garment, or size to search {spellNumber(LIVE_PLATFORM_COUNT)}{' '}
+          marketplaces at once.
         </p>
         <div className="mt-8">
           <SearchBar autoFocus />
@@ -151,7 +152,7 @@ export default function SearchContent() {
           </h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]" aria-live="polite">
             {isLoading ? (
-              'Searching seven marketplaces…'
+              `Searching ${spellNumber(LIVE_PLATFORM_COUNT)} marketplaces…`
             ) : (
               <>
                 <span className="tnum font-medium text-[var(--text)]">{visibleCount}</span>{' '}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import type { Filters, Platform } from '@/lib/types';
-import { PLATFORMS, PLATFORM_IDS } from '@/lib/platforms';
+import { PLATFORMS, LIVE_PLATFORM_IDS } from '@/lib/platforms';
 import { SIZE_GROUPS, type SizeGroupId } from '@/lib/sizes';
 
 const CONDITIONS = ['new', 'like new', 'good', 'fair'];
@@ -157,7 +157,7 @@ export default function FilterPanel({ filters, onFiltersChange, counts }: Filter
 
       <Section title="Marketplace">
         <div className="flex flex-col gap-0.5">
-          {PLATFORM_IDS.map((id) => {
+          {LIVE_PLATFORM_IDS.map((id) => {
             const meta = PLATFORMS[id];
             const checked = filters.platforms?.includes(id) ?? false;
             const count = counts?.[id];

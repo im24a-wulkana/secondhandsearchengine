@@ -3,9 +3,13 @@ import { NextResponse } from 'next/server';
 /**
  * On-demand detail lookup for platforms whose search payload is incomplete.
  *
- * Only Grailed needs this: its Algolia index ships a single cover shot and no
- * description, but the public listing API exposes both. Vinted and Poshmark
- * already return every photo in search, so they never reach here.
+ * - Grailed: its Algolia index ships a single cover shot and no description,
+ *   but the public listing API exposes both.
+ * - Mercari: search returns one thumbnail, though photos are stored under a
+ *   predictable `{id}_{n}.jpg` path. Probing stops at the first non-200.
+ *
+ * Vinted and Poshmark already return every photo in search, so they never
+ * reach here.
  */
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
@@ -76,28 +80,63 @@ async function fetchGrailed(id: string): Promise<Detail> {
   return { images, description };
 }
 
+/**
+ * Mercari stores photos at a sequential path with no manifest, so we probe
+ * upward until one 403s. Requests are HEAD and run in one batch, since a
+ * listing rarely has more than ~10.
+ */
+async function fetchMercari(id: string): Promise<Detail> {
+  const MAX_PHOTOS = 12;
+  const base = `https://static.mercdn.net/item/detail/orig/photos/${id}_`;
+
+  const checks = await Promise.all(
+    Array.from({ length: MAX_PHOTOS }, (_, i) =>
+      fetch(`${base}${i + 1}.jpg`, {
+        method: 'HEAD',
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.timeout(TIMEOUT),
+      })
+        .then((r) => r.ok)
+        .catch(() => false),
+    ),
+  );
+
+  // Stop at the first gap: a later hit would be a different listing's photo.
+  const images: string[] = [];
+  for (let i = 0; i < checks.length; i += 1) {
+    if (!checks[i]) break;
+    images.push(`${base}${i + 1}.jpg`);
+  }
+
+  return { images, description: null };
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const platform = searchParams.get('platform');
     const id = searchParams.get('id');
 
-    if (platform !== 'grailed') {
+    if (platform !== 'grailed' && platform !== 'mercari') {
       return NextResponse.json(
-        { error: 'Only Grailed listings need a detail lookup.' },
+        { error: 'That platform does not need a detail lookup.' },
         { status: 400 },
       );
     }
-    // Grailed ids are numeric; reject anything else rather than proxying it.
-    if (!id || !/^\d+$/.test(id)) {
-      return NextResponse.json({ error: 'A numeric listing id is required.' }, { status: 400 });
+
+    // Validate the id shape per platform rather than proxying arbitrary paths.
+    const valid =
+      platform === 'grailed' ? /^\d+$/.test(id ?? '') : /^m\d{8,}$/.test(id ?? '');
+    if (!valid) {
+      return NextResponse.json({ error: 'A valid listing id is required.' }, { status: 400 });
     }
 
-    const key = `grailed:${id}`;
+    const key = `${platform}:${id}`;
     const cached = readCache(key);
     if (cached) return NextResponse.json({ success: true, ...cached, cached: true });
 
-    const detail = await fetchGrailed(id);
+    const detail =
+      platform === 'grailed' ? await fetchGrailed(id!) : await fetchMercari(id!);
     writeCache(key, detail);
 
     return NextResponse.json({ success: true, ...detail });

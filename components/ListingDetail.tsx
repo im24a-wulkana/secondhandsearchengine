@@ -39,18 +39,19 @@ export default function ListingDetail({
     setZoomed(false);
   }
 
-  // Grailed's search index ships one cover shot and no description, so pull
-  // the rest from its listing API the first time the modal opens.
-  const needsDetail = item?.platform === 'grailed';
-  const numericId = item?.id.replace(/^grailed-/, '');
+  // Grailed and Mercari both return a single photo in search; fetch the full
+  // gallery (and Grailed's description) the first time the modal opens.
+  const platformId = item?.platform;
+  const needsDetail = platformId === 'grailed' || platformId === 'mercari';
+  const listingId = item?.id.replace(/^(grailed|mercari)-/, '');
 
   useEffect(() => {
-    if (!needsDetail || !numericId) return;
+    if (!needsDetail || !listingId || !platformId) return;
     const controller = new AbortController();
 
     (async () => {
       try {
-        const res = await fetch(`/api/listing?platform=grailed&id=${numericId}`, {
+        const res = await fetch(`/api/listing?platform=${platformId}&id=${listingId}`, {
           signal: controller.signal,
         });
         if (!res.ok) return;
@@ -65,7 +66,7 @@ export default function ListingDetail({
     })();
 
     return () => controller.abort();
-  }, [needsDetail, numericId]);
+  }, [needsDetail, listingId, platformId]);
 
   // Close on Escape, lock background scroll, and restore focus on exit.
   useEffect(() => {

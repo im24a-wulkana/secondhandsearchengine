@@ -4,7 +4,13 @@ import Navbar from '@/components/Navbar';
 import SearchBar from '@/components/SearchBar';
 import SearchHistory from '@/components/SearchHistory';
 import PopularSearches from '@/components/PopularSearches';
-import { PLATFORMS, PLATFORM_IDS } from '@/lib/platforms';
+import {
+  PLATFORMS,
+  PLATFORM_IDS,
+  LIVE_PLATFORM_COUNT,
+  livePlatformSentence,
+  spellNumber,
+} from '@/lib/platforms';
 
 /** Server-rendered fallback until /api/popular responds. */
 const SUGGESTIONS = [
@@ -34,7 +40,9 @@ export default function Home() {
           />
 
           <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
-            <p className="eyebrow mb-5">Seven marketplaces · one search</p>
+            <p className="eyebrow mb-5">
+              {spellNumber(LIVE_PLATFORM_COUNT)} marketplaces · one search
+            </p>
 
             <h1 className="font-display text-4xl leading-[1.05] sm:text-6xl">
               Every secondhand rail,
@@ -43,8 +51,8 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-xl text-base text-[var(--text-muted)] sm:text-lg">
-              Stop opening seven tabs. OneRail queries Grailed, Vinted, Depop, eBay,
-              Poshmark, Marketplace, and Vestiaire together — then sorts the whole pile by price.
+              Stop opening {spellNumber(LIVE_PLATFORM_COUNT)} tabs. OneRail queries{' '}
+              {livePlatformSentence()} together — then sorts the whole pile by price.
             </p>
 
             <div className="mx-auto mt-9 max-w-2xl">
@@ -60,19 +68,32 @@ export default function Home() {
         {/* Marketplace strip */}
         <section className="border-b border-[var(--hairline)] bg-[var(--bg-subtle)]">
           <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4 py-6">
-            {PLATFORM_IDS.map((id) => (
-              <span
-                key={id}
-                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-muted)]"
-              >
+            {PLATFORM_IDS.map((id) => {
+              const platform = PLATFORMS[id];
+              return (
                 <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: PLATFORMS[id].color }}
-                  aria-hidden="true"
-                />
-                {PLATFORMS[id].label}
-              </span>
-            ))}
+                  key={id}
+                  title={platform.live ? undefined : platform.note}
+                  className={`inline-flex items-center gap-2 text-sm font-medium ${
+                    platform.live
+                      ? 'text-[var(--text-muted)]'
+                      : 'text-[var(--text-faint)] opacity-60'
+                  }`}
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{
+                      backgroundColor: platform.live ? platform.color : 'var(--text-faint)',
+                    }}
+                    aria-hidden="true"
+                  />
+                  {platform.label}
+                  {!platform.live && (
+                    <span className="text-[10px] uppercase tracking-wide">soon</span>
+                  )}
+                </span>
+              );
+            })}
           </div>
         </section>
 
@@ -84,12 +105,12 @@ export default function Home() {
               {
                 n: '01',
                 title: 'Search once',
-                body: 'One query fans out to every marketplace in parallel. Slow platforms time out instead of holding up the rest.',
+                body: 'One query fans out to every marketplace at once. Slow platforms time out instead of holding up the rest.',
               },
               {
                 n: '02',
                 title: 'Compare like for like',
-                body: 'Listings are normalised to one shape — price, size, condition — so a Depop hoodie sits next to an eBay one.',
+                body: 'Listings are normalised to one shape — price, size, condition, all in USD — so a Vinted hoodie sits next to a Mercari one.',
               },
               {
                 n: '03',
