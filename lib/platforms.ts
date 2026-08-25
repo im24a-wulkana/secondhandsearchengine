@@ -16,6 +16,7 @@ export const PLATFORMS: Record<Platform, PlatformMeta> = {
   poshmark: { id: 'poshmark', label: 'Poshmark', color: '#3f8fd0', home: 'https://poshmark.com' },
   facebook: { id: 'facebook', label: 'Marketplace', color: '#4a7fe0', home: 'https://www.facebook.com/marketplace' },
   vestiaire: { id: 'vestiaire', label: 'Vestiaire', color: '#7a8899', home: 'https://www.vestiairecollective.com' },
+  mercari: { id: 'mercari', label: 'Mercari JP', color: '#e04a52', home: 'https://jp.mercari.com' },
 };
 
 export const PLATFORM_IDS = Object.keys(PLATFORMS) as Platform[];

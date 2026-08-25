@@ -1,4 +1,12 @@
-export type Platform = 'grailed' | 'vinted' | 'depop' | 'ebay' | 'poshmark' | 'facebook' | 'vestiaire';
+export type Platform =
+  | 'grailed'
+  | 'vinted'
+  | 'depop'
+  | 'ebay'
+  | 'poshmark'
+  | 'facebook'
+  | 'vestiaire'
+  | 'mercari';
 
 export type Item = {
   id: string;
@@ -25,6 +33,10 @@ export type Item = {
   /** Price including buyer fees, where the platform exposes it. */
   total_price?: number | null;
   favourites?: number | null;
+  /** Set when the seller ships domestically only and a proxy is required. */
+  proxy?: { service: string; note: string } | null;
+  /** Original price before conversion, when the listing isn't priced in USD. */
+  original_price?: { amount: number; currency: string } | null;
 };
 
 export type Filters = {

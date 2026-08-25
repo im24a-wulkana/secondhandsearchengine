@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { Heart, ImageOff } from 'lucide-react';
+import { Heart, ImageOff, Plane } from 'lucide-react';
 import type { Item } from '@/lib/types';
 import { PLATFORMS, formatPrice, relativeTime } from '@/lib/platforms';
 
@@ -115,6 +115,16 @@ export default function ItemCard({
             </time>
           )}
         </div>
+
+        {item.proxy && (
+          <span
+            title={item.proxy.note}
+            className="inline-flex w-fit items-center gap-1 rounded-[var(--r-sm)] border border-[var(--hairline)] px-1.5 py-0.5 text-[10px] text-[var(--text-faint)]"
+          >
+            <Plane size={10} />
+            via {item.proxy.service}
+          </span>
+        )}
 
         {(item.size || item.condition) && (
           <div className="flex flex-wrap gap-1.5">

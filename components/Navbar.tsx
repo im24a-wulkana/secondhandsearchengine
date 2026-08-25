@@ -34,29 +34,37 @@ export default function Navbar() {
     router.refresh();
   };
 
-  // Render nothing account-specific until the session check settles, so the
-  // nav doesn't flash "Sign in" at someone who is already signed in.
-  const links = isLoading ? (
-    navLink('/search', 'Search', <Search size={16} />)
-  ) : user ? (
+  // Browse links are always shown — the pages themselves explain what needs an
+  // account, which is friendlier than hiding the features entirely.
+  const browse = (
     <>
       {navLink('/search', 'Search', <Search size={16} />)}
       {navLink('/for-you', 'For you', <Sparkles size={16} />)}
       {navLink('/favorites', 'Saved', <Heart size={16} />)}
-      <button type="button" onClick={handleSignOut} className="btn btn-ghost">
-        <LogOut size={16} />
-        Sign out
-      </button>
     </>
-  ) : (
+  );
+
+  // Only the account controls wait for the session check, so the nav never
+  // flashes "Sign in" at someone who is already signed in.
+  const links = (
     <>
-      {navLink('/search', 'Search', <Search size={16} />)}
-      <Link href="/login" className="btn btn-ghost">
-        Sign in
-      </Link>
-      <Link href="/register" className="btn btn-primary">
-        Create account
-      </Link>
+      {browse}
+      {!isLoading &&
+        (user ? (
+          <button type="button" onClick={handleSignOut} className="btn btn-ghost">
+            <LogOut size={16} />
+            Sign out
+          </button>
+        ) : (
+          <>
+            <Link href="/login" className="btn btn-ghost">
+              Sign in
+            </Link>
+            <Link href="/register" className="btn btn-primary">
+              Create account
+            </Link>
+          </>
+        ))}
     </>
   );
 

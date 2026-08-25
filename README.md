@@ -67,22 +67,47 @@ normalised into a single ranked grid.
 
 ## Current status of the data layer
 
-**Grailed, Vinted and Poshmark are live and need no keys.** The other four
-still need credentials or a different approach:
+**Grailed, Vinted, Poshmark and Mercari JP are live and need no keys.** The
+other three still need credentials or a different approach:
 
 | Platform   | Status                                                      |
 | ---------- | ----------------------------------------------------------- |
 | **Grailed**| ✅ **Live** — public Algolia index, no key required           |
 | **Vinted** | ✅ **Live** — public catalog API via anonymous session cookies |
 | **Poshmark**| ✅ **Live** — internal JSON API, no key or browser needed      |
+| **Mercari JP**| ✅ **Live** — DPoP-signed public API, no account. Titles translated, prices converted to USD |
 | eBay       | Needs an OAuth **access token** in `EBAY_API_KEY` (an App ID alone won't authenticate) |
 | Depop      | 403 to all requests; even a real browser on depop.com is CORS-blocked from its own API. Would need full Playwright DOM scraping |
 | Vestiaire  | Cloudflare. Its `search.vestiairecollective.com` POST API works **only from a real browser** — identical headers from Node still 403, so Cloudflare is fingerprinting the TLS handshake |
 | Facebook   | Stub — returns `[]`                                          |
 
-A search currently returns roughly **1,350 listings** (up to 500 Grailed, ~680
-Vinted, ~195 Poshmark) in about 6-7 seconds. Supabase env vars are blank, so the
+A search currently returns roughly **1,500 listings** (up to 500 Grailed, ~515
+Vinted, ~190 Poshmark, ~295 Mercari JP) in about 7-9 seconds. Supabase env vars are blank, so the
 favorites and saved-search routes return `503` rather than crashing.
+
+### How the Mercari JP scraper works
+
+Mercari's public search API requires a **DPoP proof** (RFC 9449) — a self-signed
+ES256 JWT — but *not* an account. `lib/scrapers/mercari.ts` generates an
+ephemeral keypair at startup and signs each request; without the header the API
+returns `401 missing auth token`. One keypair per process is enough: Mercari
+only checks the proof is internally consistent.
+
+Gotchas:
+- Pages chain through `nextPageToken`, so they can't be parallelised. Three
+  pages of 120 returns ~295 items in under 2s.
+- Two separate image CDNs — `static.mercdn.net` for marketplace items and
+  `assets.mercari-shops-static.com` for shop items. Missing the second one
+  crashes the grid with an unconfigured-host error.
+- Sellers ship **within Japan only**, so `external_url` points at
+  `buyee.jp/mercari/item/{id}` and each item carries a `proxy` flag the UI
+  renders as a "via Buyee" badge.
+
+**Titles** are translated JA→EN with DeepL (`lib/translate.ts`) and **prices**
+converted JPY→USD (`lib/currency.ts`), with the original yen figure kept for the
+detail view. Both degrade gracefully: no `DEEPL_API_KEY` leaves titles in
+Japanese, and an unreachable FX API falls back to a cached or hardcoded rate
+rather than showing $0.
 
 ### How the Poshmark scraper works
 

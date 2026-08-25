@@ -6,6 +6,7 @@ import { scrapeDepop } from './depop';
 import { scrapePoshmark } from './poshmark';
 import { scrapeFacebook } from './facebook';
 import { scrapeVestiaire } from './vestiaire';
+import { scrapeMercari } from './mercari';
 
 const PLATFORM_TIMEOUT = 8000;
 
@@ -31,6 +32,7 @@ export async function searchAllPlatforms(query: string): Promise<Item[]> {
     withTimeout(scrapePoshmark(query), PLATFORM_TIMEOUT),
     withTimeout(scrapeFacebook(), PLATFORM_TIMEOUT),
     withTimeout(scrapeVestiaire(), PLATFORM_TIMEOUT),
+    withTimeout(scrapeMercari(query), PLATFORM_TIMEOUT),
   ]);
 
   const allItems: Item[] = [];

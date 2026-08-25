@@ -236,6 +236,11 @@ export default function ListingDetail({
               <span className="tnum text-2xl font-semibold text-[var(--accent)]">
                 {formatPrice(item.price, item.currency)}
               </span>
+              {item.original_price && (
+                <span className="tnum text-xs text-[var(--text-faint)]">
+                  {formatPrice(item.original_price.amount, item.original_price.currency)}
+                </span>
+              )}
               {item.total_price != null && item.total_price > item.price && (
                 <span className="tnum text-xs text-[var(--text-faint)]">
                   {formatPrice(item.total_price, item.currency)} with fees
@@ -276,7 +281,7 @@ export default function ListingDetail({
                 rel="noopener noreferrer"
                 className="btn btn-primary flex-1"
               >
-                View on {platform.label}
+                {item.proxy ? `Buy via ${item.proxy.service}` : `View on ${platform.label}`}
                 <ExternalLink size={15} />
               </a>
               {onFavoriteToggle && (
@@ -294,6 +299,13 @@ export default function ListingDetail({
                 </button>
               )}
             </div>
+
+            {item.proxy && (
+              <p className="rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--bg-subtle)] px-3 py-2 text-xs text-[var(--text-muted)]">
+                <strong className="text-[var(--text)]">Ships from Japan.</strong> {item.proxy.note}{' '}
+                The button opens {item.proxy.service}, which buys the item and forwards it to you.
+              </p>
+            )}
 
             <p className="text-xs text-[var(--text-faint)]">
               Listed and sold by a third-party seller on {platform.label}. OneRail handles no

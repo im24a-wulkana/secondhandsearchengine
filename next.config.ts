@@ -26,6 +26,11 @@ const IMAGE_HOSTS = [
   "**.vestiairecollective.com",
   // Facebook Marketplace
   "**.fbcdn.net",
+  // Mercari JP (mercdn for marketplace items, mercari-shops for shop items)
+  "static.mercdn.net",
+  "**.mercdn.net",
+  "assets.mercari-shops-static.com",
+  "**.mercari-shops-static.com",
 ];
 
 const nextConfig: NextConfig = {
