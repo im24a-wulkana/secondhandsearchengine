@@ -16,9 +16,9 @@ const USER_AGENT =
 const PER_PAGE = 48;
 /**
  * Pages chain through a cursor, so they can't be fetched in parallel.
- * Four pages lands around 4s — eight would exceed the 8s platform budget.
+ * Six pages lands around 5s — more would exceed the 8s platform budget.
  */
-const DEFAULT_PAGES = 4;
+const DEFAULT_PAGES = 6;
 const REQUEST_TIMEOUT = 7000;
 
 /** Poshmark's condition slugs. Unmapped/absent values stay null. */

@@ -14,7 +14,7 @@ const USER_AGENT =
 
 /** The API silently caps a page at 96 however large per_page is. */
 const PER_PAGE = 96;
-const DEFAULT_PAGES = 4;
+const DEFAULT_PAGES = 8;
 const REQUEST_TIMEOUT = 7000;
 
 /** Vinted's human-readable condition strings → the app's vocabulary. */

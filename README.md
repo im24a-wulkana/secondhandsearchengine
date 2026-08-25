@@ -75,11 +75,11 @@ still need credentials or a different approach:
 | **Poshmark**| ✅ **Live** — internal JSON API, no key or browser needed      |
 | eBay       | Needs an OAuth **access token** in `EBAY_API_KEY` (an App ID alone won't authenticate) |
 | Depop      | 403 to all requests; even a real browser on depop.com is CORS-blocked from its own API. Would need full Playwright DOM scraping |
-| Vestiaire  | 403 — bot protection                                         |
+| Vestiaire  | Cloudflare. Its `search.vestiairecollective.com` POST API works **only from a real browser** — identical headers from Node still 403, so Cloudflare is fingerprinting the TLS handshake |
 | Facebook   | Stub — returns `[]`                                          |
 
-A search currently returns roughly **985 listings** (up to 500 Grailed, ~360
-Vinted, ~125 Poshmark) in about 4 seconds. Supabase env vars are blank, so the
+A search currently returns roughly **1,350 listings** (up to 500 Grailed, ~680
+Vinted, ~195 Poshmark) in about 6-7 seconds. Supabase env vars are blank, so the
 favorites and saved-search routes return `503` rather than crashing.
 
 ### How the Poshmark scraper works
@@ -108,7 +108,7 @@ requires the anonymous session cookies any page load hands out. So
 Gotchas:
 - A page is **capped at 96 items** regardless of `per_page`, so results are
   paginated. Pages are fetched **in parallel** — serially, 5 pages takes ~11s
-  and blows the orchestrator's 8s budget; in parallel, 4 pages take ~2s.
+  and blows the orchestrator's 8s budget; in parallel, 8 pages take ~2s.
 - `price` is a `{amount, currency_code}` **object**, not a flat string, and the
   listing URL comes from `url`/`path`. The original parser assumed both were
   flat and produced `NaN` prices.
@@ -137,6 +137,33 @@ Three gotchas worth knowing if you touch it:
   `images.remotePatterns`.
 - Sizes are indexed as `category_size` facets namespaced by category
   (`footwear.10`, `bottoms.32`, `tailoring.40r`) — see `lib/sizes.ts`.
+
+## Smart search (relevance filtering)
+
+Platform search is loose — Vinted especially returns brand-adjacent items
+("Polar King jacket" for `carhartt jacket`). `lib/relevance.ts` re-ranks the
+pooled results against the query and drops the clearly-unrelated tail. The
+search API returns the kept items ordered by relevance plus a `filtered` count,
+and the UI shows an "N loose matches hidden" toggle to reveal them.
+
+Why scoring rather than keyword filtering: a naive `title.includes(word)` test
+rejects **76%** of results for `levis 501`, because the titles read "Levi's 501"
+— an apostrophe, not a mismatch.
+
+How a listing is scored (0–1 over the query terms):
+- **Normalisation** folds case, accents and apostrophe variants, so `Levi's`,
+  `LEVI’S`, `Levi´s` and `Levis` are one token. Apostrophes are stripped
+  *before* NFKD, which would otherwise decompose `´` into a space + combining
+  mark and split the word.
+- **Synonyms** — a coat, anorak, parka or bomber all match "jacket".
+- **Typo tolerance** — bounded edit distance catches `Carhart`/`Carthartt`.
+- **Rarity weighting (IDF)** — a term in nearly every title ("jacket" in a
+  jacket search) counts less than a distinctive one ("carhartt").
+- **Anchor rule** — the rarest query term (usually the brand) *must* match.
+  Without it, "Polar King jacket" passes on the garment word alone.
+
+Typical effect: ~150 of ~1,350 results removed for `carhartt jacket`. Pass
+`strict: false` to `/api/search` to skip filtering entirely.
 
 ## Sizes
 

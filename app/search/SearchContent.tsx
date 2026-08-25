@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, SearchX } from 'lucide-react';
+import { AlertTriangle, Filter, SearchX } from 'lucide-react';
 import type { Item, Filters, Platform } from '@/lib/types';
 import FilterPanel, { countActiveFilters } from '@/components/FilterPanel';
 import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGrid';
@@ -27,6 +27,9 @@ export default function SearchContent() {
   const [sortBy, setSortBy] = useState<SortKey>('relevance');
   const [error, setError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  // Number of loosely-matching listings the relevance filter removed.
+  const [filteredOut, setFilteredOut] = useState(0);
+  const [strict, setStrict] = useState(true);
 
   // Reset refinements when the search term changes. Adjusting state during
   // render (rather than in an effect) avoids a second render pass showing the
@@ -36,6 +39,7 @@ export default function SearchContent() {
     setLastQuery(query);
     setFilters({});
     setSortBy('relevance');
+    setFilteredOut(0);
     // Clearing the query has no fetch to run, so settle the list here.
     if (!query) {
       setItems([]);
@@ -60,13 +64,14 @@ export default function SearchContent() {
         const response = await fetch('/api/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({ query, strict }),
           signal: controller.signal,
         });
         if (!response.ok) throw new Error(`Search failed (${response.status})`);
         const data = await response.json();
         const results: Item[] = Array.isArray(data.data) ? data.data : [];
         setItems(results);
+        setFilteredOut(typeof data.filtered === 'number' ? data.filtered : 0);
         // Only remember searches that actually found something, so typos and
         // dead ends don't pollute the For You feed.
         if (results.length > 0) recordSearch(query);
@@ -80,7 +85,7 @@ export default function SearchContent() {
     })();
 
     return () => controller.abort();
-  }, [query]);
+  }, [query, strict]);
 
   const counts = useMemo(() => {
     const acc: Partial<Record<Platform, number>> = {};
@@ -141,6 +146,31 @@ export default function SearchContent() {
         </div>
 
         <div className="flex items-center gap-2">
+          {(filteredOut > 0 || !strict) && (
+            <button
+              type="button"
+              onClick={() => setStrict((v) => !v)}
+              className="btn btn-ghost text-sm"
+              title={
+                strict
+                  ? 'Show listings that only loosely match your search'
+                  : 'Hide listings that don’t closely match your search'
+              }
+            >
+              {strict ? (
+                <>
+                  <Filter size={15} />
+                  <span className="tnum">{filteredOut}</span> loose match
+                  {filteredOut === 1 ? '' : 'es'} hidden
+                </>
+              ) : (
+                <>
+                  <Filter size={15} />
+                  Hide loose matches
+                </>
+              )}
+            </button>
+          )}
           <label htmlFor="sort" className="sr-only">
             Sort results
           </label>
