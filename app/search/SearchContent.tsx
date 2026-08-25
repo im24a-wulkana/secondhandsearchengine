@@ -7,6 +7,7 @@ import type { Item, Filters, Platform } from '@/lib/types';
 import FilterPanel, { countActiveFilters } from '@/components/FilterPanel';
 import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGrid';
 import SearchBar from '@/components/SearchBar';
+import ListingDetail from '@/components/ListingDetail';
 import { PLATFORMS } from '@/lib/platforms';
 import { recordSearch } from '@/lib/history';
 
@@ -30,6 +31,7 @@ export default function SearchContent() {
   // Number of loosely-matching listings the relevance filter removed.
   const [filteredOut, setFilteredOut] = useState(0);
   const [strict, setStrict] = useState(true);
+  const [openItem, setOpenItem] = useState<Item | null>(null);
 
   // Reset refinements when the search term changes. Adjusting state during
   // render (rather than in an effect) avoids a second render pass showing the
@@ -231,9 +233,17 @@ export default function SearchContent() {
             favorites={favorites}
             onFavoriteToggle={toggleFavorite}
             onClearFilters={() => setFilters({})}
+            onOpen={setOpenItem}
           />
         </div>
       </div>
+
+      <ListingDetail
+        item={openItem}
+        onClose={() => setOpenItem(null)}
+        isFavorite={openItem ? (favorites[openItem.id] ?? false) : false}
+        onFavoriteToggle={toggleFavorite}
+      />
     </main>
   );
 }

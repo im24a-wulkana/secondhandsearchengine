@@ -46,6 +46,12 @@ type GrailedHit = {
   created_at?: string;
   cover_photo?: { url?: string; image_url?: string };
   photos?: { url?: string }[];
+  description?: string;
+  designer_names?: string;
+  color?: string;
+  location?: string;
+  followerno?: number;
+  user?: { username?: string; seller_score?: { rating_average?: number } };
 };
 
 export async function scrapeGrailed(query: string, limit = DEFAULT_LIMIT): Promise<Item[]> {
@@ -121,5 +127,17 @@ function toItem(hit: GrailedHit): Item {
     image_url: photo ? `${photo}?w=600&fit=clip&auto=format` : '',
     external_url: `https://www.grailed.com/listings/${hit.id}`,
     listed_at: hit.created_at ?? null,
+
+    // The search index carries no description and only a cover shot.
+    description: hit.description ?? null,
+    images: photo ? [`${photo}?w=1200&fit=clip&auto=format`] : [],
+    brand: hit.designer_names ?? null,
+    color: hit.color ?? null,
+    seller: {
+      name: hit.user?.username ?? null,
+      rating: hit.user?.seller_score?.rating_average ?? null,
+      location: hit.location ?? null,
+    },
+    favourites: hit.followerno ?? null,
   };
 }

@@ -40,6 +40,12 @@ type PoshmarkPost = {
   inventory?: { status?: string };
   first_published_at?: string;
   created_at?: string;
+  description?: string;
+  pictures?: { url?: string; url_small?: string; url_large?: string }[];
+  brand?: string;
+  colors?: { name?: string }[];
+  creator_username?: string;
+  aggregates?: { likes?: number };
 };
 
 type PoshmarkResponse = {
@@ -135,5 +141,15 @@ function toItem(post: PoshmarkPost): Item {
     // The bare-id URL 301s to this slug form; build it directly.
     external_url: `https://poshmark.com/listing/${toSlug(title)}-${post.id}`,
     listed_at: post.first_published_at ?? post.created_at ?? null,
+
+    description: post.description ?? null,
+    // The search payload already carries every picture (up to ~15).
+    images: (post.pictures ?? [])
+      .map((p) => p.url_large ?? p.url)
+      .filter((u): u is string => Boolean(u)),
+    brand: post.brand ?? null,
+    color: post.colors?.[0]?.name ?? null,
+    seller: { name: post.creator_username ?? null, rating: null, location: null },
+    favourites: post.aggregates?.likes ?? null,
   };
 }

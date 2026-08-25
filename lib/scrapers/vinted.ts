@@ -36,6 +36,10 @@ type VintedItem = {
   url?: string;
   path?: string;
   photo?: { url?: string; high_resolution?: { timestamp?: number } };
+  photos?: { url?: string; full_size_url?: string }[];
+  brand_title?: string;
+  favourite_count?: number;
+  user?: { login?: string };
 };
 
 /** Session cookies are reused across calls; they're cheap but not free. */
@@ -119,6 +123,8 @@ export async function scrapeVinted(query: string, pages = DEFAULT_PAGES): Promis
 function toItem(raw: VintedItem): Item {
   // `price` is a {amount, currency_code} object, not a flat string.
   const amount = Number.parseFloat(raw.price?.amount ?? '');
+  const total = Number.parseFloat(raw.total_item_price?.amount ?? '');
+  const totalAmount = Number.isFinite(total) ? total : null;
   const timestamp = raw.photo?.high_resolution?.timestamp;
 
   return {
@@ -133,5 +139,18 @@ function toItem(raw: VintedItem): Item {
     // `url` is absolute; `path` is the relative fallback.
     external_url: raw.url ?? (raw.path ? `${BASE}${raw.path}` : ''),
     listed_at: timestamp ? new Date(timestamp * 1000).toISOString() : null,
+
+    // Vinted's search payload has no description, but does carry extra photos
+    // and the fee-inclusive price.
+    description: null,
+    // The search payload already carries every photo (up to ~13).
+    images: (raw.photos ?? [])
+      .map((p) => p.full_size_url ?? p.url)
+      .filter((u): u is string => Boolean(u)),
+    brand: raw.brand_title ?? null,
+    color: null,
+    seller: { name: raw.user?.login ?? null, rating: null, location: null },
+    total_price: totalAmount,
+    favourites: raw.favourite_count ?? null,
   };
 }

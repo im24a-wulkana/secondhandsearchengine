@@ -138,7 +138,38 @@ Three gotchas worth knowing if you touch it:
 - Sizes are indexed as `category_size` facets namespaced by category
   (`footwear.10`, `bottoms.32`, `tailoring.40r`) — see `lib/sizes.ts`.
 
-## Smart search (relevance filtering)
+## Listing detail view
+
+Clicking a card opens a detail modal (`components/ListingDetail.tsx`) instead of
+navigating straight to the marketplace. It shows the full photo gallery, price,
+size/condition/brand/colour, seller, and the description, with a
+"View on <platform>" button as the only way out to the original listing.
+
+Results live in client state, so the modal reads the already-fetched `Item` —
+no extra request for Vinted or Poshmark, and no detail route to maintain.
+
+### Photos
+
+Every photo a platform exposes is viewable. Click the main image (or press
+Enter on it) for a full-screen lightbox; arrow keys and on-image arrows move
+between shots, Escape backs out of the lightbox before closing the modal.
+
+| Platform | Photos | Source |
+| -------- | ------ | ------ |
+| Poshmark | avg ~8, up to 15 | already in the search payload |
+| Vinted   | avg ~6, up to 20 | already in the search payload |
+| Grailed  | up to ~10 + description | fetched on demand — see below |
+
+Grailed's Algolia index ships **one** cover shot and no description, even though
+it reports `photo_count: 10`. Its public listing API has both, so
+`/api/listing?platform=grailed&id=<id>` fetches them when the modal opens and
+caches the result for 30 minutes (bounded, per-instance). Nothing is fetched
+during search, so the 500-listing Grailed page cost is unchanged.
+
+The route only accepts `platform=grailed` with a numeric id — it is a targeted
+gap-filler, not a general proxy.
+
+## Smart search (relevance filtering)## Smart search (relevance filtering)
 
 Platform search is loose — Vinted especially returns brand-adjacent items
 ("Polar King jacket" for `carhartt jacket`). `lib/relevance.ts` re-ranks the

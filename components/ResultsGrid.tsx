@@ -16,6 +16,7 @@ interface ResultsGridProps {
   favorites?: Record<string, boolean>;
   onFavoriteToggle?: (item: Item) => void;
   onClearFilters?: () => void;
+  onOpen?: (item: Item) => void;
 }
 
 const GRID = 'grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4';
@@ -72,6 +73,7 @@ export default function ResultsGrid({
   favorites = {},
   onFavoriteToggle,
   onClearFilters,
+  onOpen,
 }: ResultsGridProps) {
   const visible = useMemo(() => applyFilters(items, filters, sortBy), [items, filters, sortBy]);
 
@@ -123,6 +125,7 @@ export default function ResultsGrid({
           index={i}
           isFavorite={favorites[item.id] ?? false}
           onFavoriteToggle={onFavoriteToggle}
+          onOpen={onOpen}
         />
       ))}
     </div>

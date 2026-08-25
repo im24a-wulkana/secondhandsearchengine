@@ -11,6 +11,7 @@ import {
   subscribeHistory,
 } from '@/lib/history';
 import ItemCard from '@/components/ItemCard';
+import ListingDetail from '@/components/ListingDetail';
 
 export default function ForYouContent() {
   // Reading through the store keeps React in sync with localStorage without
@@ -27,6 +28,7 @@ export default function ForYouContent() {
   const [error, setError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [reloadKey, setReloadKey] = useState(0);
+  const [openItem, setOpenItem] = useState<Item | null>(null);
 
   const toggleFavorite = useCallback((item: Item) => {
     setFavorites((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
@@ -156,10 +158,18 @@ export default function ForYouContent() {
               index={i}
               isFavorite={favorites[item.id] ?? false}
               onFavoriteToggle={toggleFavorite}
+              onOpen={setOpenItem}
             />
           ))}
         </div>
       )}
+
+      <ListingDetail
+        item={openItem}
+        onClose={() => setOpenItem(null)}
+        isFavorite={openItem ? (favorites[openItem.id] ?? false) : false}
+        onFavoriteToggle={toggleFavorite}
+      />
     </>
   );
 }

@@ -12,6 +12,8 @@ interface ItemCardProps {
   onFavoriteToggle?: (item: Item) => void;
   /** Stagger index for the entrance animation. */
   index?: number;
+  /** When provided, the card opens the detail view instead of the marketplace. */
+  onOpen?: (item: Item) => void;
 }
 
 export default function ItemCard({
@@ -19,6 +21,7 @@ export default function ItemCard({
   isFavorite = false,
   onFavoriteToggle,
   index = 0,
+  onOpen,
 }: ItemCardProps) {
   const [imageBroken, setImageBroken] = useState(false);
 
@@ -79,14 +82,24 @@ export default function ItemCard({
         <h3 className="clamp-2 text-sm leading-snug text-[var(--text)]">
           {/* Stretched link makes the whole card a single hit target without
               nesting interactive elements inside an anchor. */}
-          <a
-            href={item.external_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="after:absolute after:inset-0 after:z-10 after:content-[''] hover:text-[var(--accent)]"
-          >
-            {item.title}
-          </a>
+          {onOpen ? (
+            <button
+              type="button"
+              onClick={() => onOpen(item)}
+              className="text-left after:absolute after:inset-0 after:z-10 after:content-[''] hover:text-[var(--accent)]"
+            >
+              {item.title}
+            </button>
+          ) : (
+            <a
+              href={item.external_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="after:absolute after:inset-0 after:z-10 after:content-[''] hover:text-[var(--accent)]"
+            >
+              {item.title}
+            </a>
+          )}
         </h3>
 
         <div className="mt-auto flex items-baseline justify-between gap-2 pt-1">
