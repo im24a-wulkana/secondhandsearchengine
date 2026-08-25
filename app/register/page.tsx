@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 
-export const metadata = { title: 'Create account · Thrifthound' };
+export const metadata = { title: 'Create account · Onerail' };
 
 export default function RegisterPage() {
   return (

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
-export const metadata = { title: 'Saved · Thrifthound' };
+export const metadata = { title: 'Saved · Onerail' };
 
 export default function FavoritesPage() {
   return (

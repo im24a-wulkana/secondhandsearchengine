@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 
-export const metadata = { title: 'Sign in · Thrifthound' };
+export const metadata = { title: 'Sign in · Onerail' };
 
 export default function LoginPage() {
   return (

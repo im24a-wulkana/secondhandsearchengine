@@ -10,7 +10,7 @@ import { getSql } from './db';
  * costs no database round trip. Signing out clears the cookie; there's no
  * server-side session table to keep in sync.
  */
-const COOKIE_NAME = 'thrifthound_session';
+const COOKIE_NAME = 'onerail_session';
 const SESSION_DAYS = 30;
 const BCRYPT_ROUNDS = 12;
 

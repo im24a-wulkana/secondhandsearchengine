@@ -43,7 +43,7 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-xl text-base text-[var(--text-muted)] sm:text-lg">
-              Stop opening seven tabs. Thrifthound queries Grailed, Vinted, Depop, eBay,
+              Stop opening seven tabs. Onerail queries Grailed, Vinted, Depop, eBay,
               Poshmark, Marketplace, and Vestiaire together — then sorts the whole pile by price.
             </p>
 
@@ -94,7 +94,7 @@ export default function Home() {
               {
                 n: '03',
                 title: 'Buy at the source',
-                body: 'Every card links straight to the original listing. Thrifthound never sits between you and the seller.',
+                body: 'Every card links straight to the original listing. Onerail never sits between you and the seller.',
               },
             ].map((step) => (
               <li key={step.n} className="card p-6">
@@ -126,7 +126,7 @@ export default function Home() {
 
         <footer className="border-t border-[var(--hairline)]">
           <div className="mx-auto max-w-[1400px] px-4 py-8 text-center text-xs text-[var(--text-faint)] sm:px-6">
-            Thrifthound links to listings on third-party marketplaces. Prices and availability are
+            Onerail links to listings on third-party marketplaces. Prices and availability are
             set by the sellers.
           </div>
         </footer>

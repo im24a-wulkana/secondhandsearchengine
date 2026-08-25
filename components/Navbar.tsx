@@ -67,7 +67,7 @@ export default function Navbar() {
           href="/"
           className="font-display text-lg font-semibold tracking-tight text-[var(--text)]"
         >
-          Thrift<span className="text-[var(--accent)]">hound</span>
+          One<span className="text-[var(--accent)]">rail</span>
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">

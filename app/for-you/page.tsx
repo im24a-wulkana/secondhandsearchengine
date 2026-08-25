@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import ForYouContent from './ForYouContent';
 import { getSessionUser } from '@/lib/auth';
 
-export const metadata = { title: 'For you · Thrifthound' };
+export const metadata = { title: 'For you · Onerail' };
 
 export default async function ForYouPage() {
   // Gated server-side: the page never renders for signed-out visitors, so

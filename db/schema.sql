@@ -1,4 +1,4 @@
--- Thrifthound schema for Neon Postgres.
+-- Onerail schema for Neon Postgres.
 -- Safe to run more than once.
 
 create extension if not exists pgcrypto;

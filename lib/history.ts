@@ -6,7 +6,7 @@
  * cleared storage, and hand-edited values all degrade to "no history".
  */
 
-const KEY = 'thrifthound:searches';
+const KEY = 'onerail:searches';
 const MAX_ENTRIES = 40;
 
 export type SearchRecord = {

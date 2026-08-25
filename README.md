@@ -1,6 +1,7 @@
-# 🔍 Secondhand Clothing Search Aggregator
+# 🔍 Onerail
 
-A modern web application that aggregates listings from 7 major secondhand clothing platforms into a unified, searchable interface.
+Every secondhand rail, searched at once — one query across 7 marketplaces,
+normalised into a single ranked grid.
 
 **Run locally:** `npm run dev` → http://localhost:3000
 

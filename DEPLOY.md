@@ -1,4 +1,4 @@
-# Deploying Thrifthound
+# Deploying Onerail
 
 Two services: **Neon** for Postgres, **Vercel** for hosting.
 
