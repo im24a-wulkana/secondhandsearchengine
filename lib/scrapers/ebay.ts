@@ -69,6 +69,7 @@ type EbayItem = {
   itemCreationDate?: string;
   seller?: { username?: string; feedbackPercentage?: string };
   itemLocation?: { country?: string };
+  categories?: { categoryId?: string; categoryName?: string }[];
 };
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
@@ -196,6 +197,8 @@ function toItem(raw: EbayItem): Item {
     images: cover ? [cover, ...extra] : extra,
     description: null,
     brand: null,
+    // Comma-joined ids so the apparel filter can test the whole tree.
+    category: (raw.categories ?? []).map((c) => c.categoryId).filter(Boolean).join(','),
     seller: {
       name: raw.seller?.username ?? null,
       // Feedback is a 0-100 percentage; show it on the same 5-point scale.

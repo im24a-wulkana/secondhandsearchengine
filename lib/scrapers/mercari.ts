@@ -43,6 +43,7 @@ type MercariItem = {
   itemConditionId?: string;
   itemBrand?: { name?: string };
   itemSize?: { name?: string };
+  categoryId?: string | number;
 };
 
 /**
@@ -163,6 +164,7 @@ function toItem(raw: MercariItem, title: string, rate: number | null): Item {
 
     images: raw.thumbnails ?? [],
     brand: raw.itemBrand?.name ?? null,
+    category: raw.categoryId != null ? String(raw.categoryId) : null,
     description: null,
     seller: null,
     proxy: {

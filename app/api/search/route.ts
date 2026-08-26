@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchAllPlatforms } from '@/lib/scrapers';
 import { rankByRelevance } from '@/lib/relevance';
+import { filterApparel } from '@/lib/apparel';
 import { getSql } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 
@@ -39,9 +40,17 @@ export async function POST(request: NextRequest) {
     // Platform search is loose, so re-rank against the query and drop the
     // clearly-unrelated tail. Ordering is by relevance, which is what the
     // client's default "Relevance" sort expects.
-    const { kept, removed } = strict
-      ? rankByRelevance(items, trimmed)
+    // Drop non-wearable stock first (fragrance, cosmetics, homeware), then
+    // rank what's left. Doing it in this order keeps the relevance floor from
+    // being computed against noise.
+    const apparelOnly = body?.apparelOnly !== false;
+    const { kept: wearable, removed: nonApparel } = apparelOnly
+      ? filterApparel(items)
       : { kept: items, removed: 0 };
+
+    const { kept, removed } = strict
+      ? rankByRelevance(wearable, trimmed)
+      : { kept: wearable, removed: 0 };
 
     // Awaited rather than floated: serverless functions can be frozen the
     // moment a response is returned, which would drop an in-flight insert.
@@ -52,6 +61,7 @@ export async function POST(request: NextRequest) {
       data: kept,
       total: kept.length,
       filtered: removed,
+      nonApparelFiltered: nonApparel,
       query: trimmed,
     });
   } catch (error) {

@@ -218,6 +218,33 @@ during search, so the 500-listing Grailed page cost is unchanged.
 The route only accepts `platform=grailed` with a numeric id — it is a targeted
 gap-filler, not a general proxy.
 
+## Clothing-only filter
+
+Searching a fashion brand pulls in a lot of adjacent stock — eBay especially
+returns fragrance, cosmetics and homeware. `lib/apparel.ts` drops anything that
+isn't wearable. **Accessories count as wearable**: bags, sunglasses, watches,
+jewellery, belts, wallets and scarves are all kept.
+
+Two signals, checked in that order:
+
+1. **Category metadata**, which is authoritative because it comes from the
+   marketplace itself.
+   - eBay: category ids — `11450` (Clothing, Shoes & Accessories) and `281`
+     (Jewelry & Watches) are allowed; `26395` (Health & Beauty), `11700`
+     (Home & Garden) and similar roots are rejected.
+   - Mercari: ids in the 700–820 range are cosmetics/fragrance.
+   - Grailed's index is apparel-only, so its listings always pass.
+2. **Title keywords**, only when a platform gives no usable category. A reject
+   word is ignored when a garment word appears alongside it, so
+   *"Dior Beauty Makeup **Bag**"* survives while *"Miss Dior Eau de Parfum"*
+   does not.
+
+Typical effect on `dior`: ~250 of ~1,600 removed. Clothing-specific queries are
+untouched — `carhartt jacket` loses **zero**.
+
+The UI shows an "N non-clothing hidden" toggle; pass `apparelOnly: false` to
+`/api/search` to skip the filter entirely.
+
 ## Smart search (relevance filtering)## Smart search (relevance filtering)
 
 Platform search is loose — Vinted especially returns brand-adjacent items

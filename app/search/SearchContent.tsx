@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowLeft, Filter, Heart, SearchX } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Filter, Heart, SearchX, Shirt } from 'lucide-react';
 import type { Item, Filters, Platform } from '@/lib/types';
 import FilterPanel, { countActiveFilters } from '@/components/FilterPanel';
 import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGrid';
@@ -33,6 +33,8 @@ export default function SearchContent() {
   // Number of loosely-matching listings the relevance filter removed.
   const [filteredOut, setFilteredOut] = useState(0);
   const [strict, setStrict] = useState(true);
+  const [apparelOnly, setApparelOnly] = useState(true);
+  const [nonApparelFiltered, setNonApparelFiltered] = useState(0);
   const [openItem, setOpenItem] = useState<Item | null>(null);
 
   // Reset refinements when the search term changes. Adjusting state during
@@ -44,6 +46,7 @@ export default function SearchContent() {
     setFilters({});
     setSortBy('relevance');
     setFilteredOut(0);
+    setNonApparelFiltered(0);
     // Clearing the query has no fetch to run, so settle the list here.
     if (!query) {
       setItems([]);
@@ -68,7 +71,7 @@ export default function SearchContent() {
         const response = await fetch('/api/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, strict }),
+          body: JSON.stringify({ query, strict, apparelOnly }),
           signal: controller.signal,
         });
         if (!response.ok) throw new Error(`Search failed (${response.status})`);
@@ -76,6 +79,9 @@ export default function SearchContent() {
         const results: Item[] = Array.isArray(data.data) ? data.data : [];
         setItems(results);
         setFilteredOut(typeof data.filtered === 'number' ? data.filtered : 0);
+        setNonApparelFiltered(
+          typeof data.nonApparelFiltered === 'number' ? data.nonApparelFiltered : 0,
+        );
         // Only remember searches that actually found something, so typos and
         // dead ends don't pollute the For You feed.
         if (results.length > 0) recordSearch(query);
@@ -89,7 +95,7 @@ export default function SearchContent() {
     })();
 
     return () => controller.abort();
-  }, [query, strict]);
+  }, [query, strict, apparelOnly]);
 
   const counts = useMemo(() => {
     const acc: Partial<Record<Platform, number>> = {};
@@ -166,6 +172,28 @@ export default function SearchContent() {
         </div>
 
         <div className="flex items-center gap-2">
+          {(nonApparelFiltered > 0 || !apparelOnly) && (
+            <button
+              type="button"
+              onClick={() => setApparelOnly((v) => !v)}
+              className="btn btn-ghost text-sm"
+              title={
+                apparelOnly
+                  ? 'Show fragrance, cosmetics and other non-wearable listings'
+                  : 'Hide listings that are not clothing or accessories'
+              }
+            >
+              <Shirt size={15} />
+              {apparelOnly ? (
+                <>
+                  <span className="tnum">{nonApparelFiltered}</span> non-clothing hidden
+                </>
+              ) : (
+                'Clothing only'
+              )}
+            </button>
+          )}
+
           {(filteredOut > 0 || !strict) && (
             <button
               type="button"

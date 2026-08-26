@@ -37,6 +37,11 @@ export type Item = {
   proxy?: { service: string; note: string } | null;
   /** Original price before conversion, when the listing isn't priced in USD. */
   original_price?: { amount: number; currency: string } | null;
+  /**
+   * Platform-native category identifier or path, used to reject listings that
+   * aren't clothing. Shape varies per platform — see `lib/apparel.ts`.
+   */
+  category?: string | null;
 };
 
 export type Filters = {
