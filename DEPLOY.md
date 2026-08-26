@@ -134,6 +134,54 @@ terms until then, and switches over automatically.
 
 ---
 
+## 5. eBay account-deletion endpoint
+
+eBay requires a reachable notification endpoint before it issues **production**
+keys. `app/api/ebay/account-deletion/route.ts` implements it. Sandbox keys do
+not need this — skip the section if you only want to test.
+
+It cannot be completed on localhost: eBay must reach a public HTTPS URL, so
+deploy first.
+
+**1. Set two variables in Vercel** (Production at minimum):
+
+| Variable | Value |
+| -------- | ----- |
+| `EBAY_VERIFICATION_TOKEN` | A value *you invent* — 32-80 chars, `[A-Za-z0-9_-]` only. **Not your eBay password.** One is already generated in your local `.env.local`. |
+| `EBAY_DELETION_ENDPOINT` | `https://<your-domain>/api/ebay/account-deletion` — **no trailing slash** |
+
+Redeploy so the variables take effect.
+
+**2. In the eBay developer portal**, under Application Keys → your app →
+*Notifications* / *Marketplace account deletion*, enter the same URL and the
+same token, then click **Send Test Notification**.
+
+### How it works
+
+eBay sends `GET ?challenge_code=…` and expects back:
+
+```json
+{ "challengeResponse": "<sha256 hex>" }
+```
+
+where the hash is `SHA-256(challengeCode + verificationToken + endpointUrl)` —
+**in that exact order**. The route also answers `POST` with `200` for real
+deletion notifications; OneRail stores no eBay user data, so there is nothing
+to erase on receipt.
+
+### If validation fails
+
+Almost always a mismatch between `EBAY_DELETION_ENDPOINT` and what is typed
+into eBay's portal. The hash is over the URL *string*, so a trailing slash,
+`http` vs `https`, or `www.` produces a completely different — and silently
+wrong — response. The two must match character for character.
+
+Check it yourself against a live deployment:
+
+```bash
+curl "https://<your-domain>/api/ebay/account-deletion?challenge_code=abc"
+```
+
 ## Troubleshooting
 
 **"Accounts are not configured on this deployment."**
