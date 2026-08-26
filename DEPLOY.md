@@ -78,6 +78,7 @@ Expect `users`, `favorites`, `searches`, and the `popular_searches` view.
 | `DATABASE_URL` | yes, for accounts | Neon **pooled** connection string |
 | `AUTH_SECRET` | yes, for accounts | Signs session cookies. **32+ characters** |
 | `ANTHROPIC_API_KEY` | optional | Powers photo search and the counterfeit check. Without it both return "not configured" |
+| `AI_OWNER_EMAILS` | optional | Comma-separated emails exempt from AI daily quotas. Defaults to the project owner |
 | `EBAY_CLIENT_ID` | optional | eBay **App ID** from the developer portal |
 | `EBAY_CLIENT_SECRET` | optional | eBay **Cert ID** (the secret half of the pair) |
 | `EBAY_VERIFICATION_TOKEN` | for production keys | A value you invent — see section 5 |

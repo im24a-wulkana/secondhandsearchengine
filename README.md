@@ -253,6 +253,24 @@ title, which is several marketplace searches per batch.
 Both need `ANTHROPIC_API_KEY`. Without it they return a clear "not configured"
 message and nothing else in the app changes.
 
+### Spend limits
+
+These two endpoints bill the project owner's Anthropic account, so they are
+gated in `lib/quota.ts`:
+
+- **Signing in is required.** An anonymous caller has no identity to meter, and
+  an open endpoint means anyone with the URL can spend your credits.
+- **Non-owner accounts get a daily allowance** — 5 authenticity checks and 10
+  photo searches per rolling 24 hours, tracked in the `ai_usage` table. Over
+  the limit returns `429` *before* any API call, so a blocked request costs
+  nothing.
+- **Owner accounts are exempt** and their calls are never logged. Set
+  `AI_OWNER_EMAILS` to a comma-separated list; it defaults to the project
+  owner. Matching is case-insensitive.
+
+Usage is recorded **only after a successful response**, so a failed check never
+costs the user one of their allowance.
+
 ### Search by photo
 
 The camera button in the search bar. A vision model names the brand, model and
@@ -265,7 +283,13 @@ level before searching, because a wrong brand guess makes the search useless.
 
 ### Counterfeit red-flag check
 
-A button on any opened listing. It reads the listing photos for known
+A button on any opened listing, shown only to signed-in users.
+
+**Speed.** A quick check takes about **35 seconds**; adding brand research
+takes **two to three minutes**. Profiling showed why: image downloads cost
+~0.5s and the model call ~15s, but web search alone accounts for ~157s. So
+research is opt-in — a second button appears once the quick result is on
+screen. It reads the listing photos for known
 counterfeit tells — tag typography and spelling, embroidery stitch quality,
 hardware engraving, seam and pattern alignment — and uses web search for
 brand-specific authentication markers where they are documented.

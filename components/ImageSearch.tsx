@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Camera, Loader2, X } from 'lucide-react';
+import { useSession } from './SessionProvider';
 
 type Result = {
   query: string;
@@ -19,6 +20,7 @@ const MAX_BYTES = 5_000_000;
 export default function ImageSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { user, isLoading: sessionLoading } = useSession();
 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -83,6 +85,9 @@ export default function ImageSearch() {
     reset();
     router.push(`/search?q=${encodeURIComponent(trimmed)}`);
   };
+
+  // Photo search bills the owner's account, so it is members-only.
+  if (sessionLoading || !user) return null;
 
   return (
     <>

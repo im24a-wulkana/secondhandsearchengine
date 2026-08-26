@@ -18,8 +18,12 @@ export function getClaude(): Anthropic | null {
 
 export const AI_MODEL = 'claude-opus-5';
 
-/** Marketplace photos vary wildly in size; cap what we send per request. */
-export const MAX_IMAGES = 8;
+/**
+ * Marketplace photos vary wildly in size; cap what we send per request.
+ * Five covers the shots that matter (tag, stitching, hardware) — eight roughly
+ * doubled latency for little extra signal.
+ */
+export const MAX_IMAGES = 5;
 
 /**
  * Downloads listing photos and returns them as base64 image blocks.

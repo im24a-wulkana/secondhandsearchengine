@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getClaude, isAiConfigured, AI_MODEL } from '@/lib/ai';
+import { checkQuota, recordUsage } from '@/lib/quota';
 
 /**
  * Turns an uploaded photo into search terms.
@@ -27,6 +28,12 @@ export async function POST(request: Request) {
       },
       { status: 503 },
     );
+  }
+
+  // Metered: this endpoint spends Anthropic credits, so it needs an identity.
+  const quota = await checkQuota('image-search');
+  if (!quota.allowed) {
+    return NextResponse.json({ error: quota.error }, { status: quota.status });
   }
 
   try {
@@ -122,7 +129,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No result was returned.' }, { status: 502 });
     }
 
-    return NextResponse.json({ success: true, result: JSON.parse(text.text) });
+    await recordUsage('image-search', quota.user, quota.owner);
+
+    return NextResponse.json({
+      success: true,
+      result: JSON.parse(text.text),
+      remaining: quota.remaining,
+    });
   } catch (error) {
     console.error('Image search error:', error);
     return NextResponse.json({ error: 'Could not identify that image.' }, { status: 500 });

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:setup": "node scripts/setup-db.mjs"
+    "db:setup": "node --env-file-if-exists=.env.local scripts/setup-db.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

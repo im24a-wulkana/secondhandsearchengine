@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, ShieldQuestion, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Globe, Loader2, ShieldQuestion, X } from 'lucide-react';
+import Link from 'next/link';
 import type { Item } from '@/lib/types';
+import { useSession } from './SessionProvider';
 
 type Concern = { area: string; observation: string; severity: 'low' | 'medium' | 'high' };
 type Positive = { area: string; observation: string };
@@ -21,15 +23,19 @@ const SEVERITY_STYLE: Record<Concern['severity'], string> = {
 };
 
 export default function AuthenticityCheck({ item }: { item: Item }) {
+  const { user, isLoading: sessionLoading } = useSession();
   const [result, setResult] = useState<Result | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [deep, setDeep] = useState(false);
 
-  const run = async () => {
+  const run = async (deepResearch = false) => {
     setIsLoading(true);
     setError(null);
     setOpen(true);
+    setDeep(deepResearch);
     try {
       const res = await fetch('/api/authenticate', {
         method: 'POST',
@@ -42,6 +48,7 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
           platform: item.platform,
           description: item.description,
           images: item.images?.length ? item.images : [item.image_url],
+          deepResearch,
         }),
       });
       const data = await res.json();
@@ -50,6 +57,8 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
         return;
       }
       setResult(data.result);
+      setRemaining(typeof data.remaining === 'number' ? data.remaining : null);
+      setDeep(Boolean(data.deepResearch));
     } catch {
       setError('Could not reach the server. Try again.');
     } finally {
@@ -57,11 +66,23 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
     }
   };
 
+  // Nothing until the session check settles, so the control doesn't flicker.
+  if (sessionLoading) return null;
+
+  if (!user) {
+    return (
+      <Link href="/login" className="btn btn-secondary w-full text-sm">
+        <ShieldQuestion size={15} />
+        Sign in to check for counterfeit signs
+      </Link>
+    );
+  }
+
   return (
     <>
       <button
         type="button"
-        onClick={run}
+        onClick={() => run(false)}
         disabled={isLoading}
         className="btn btn-secondary w-full text-sm"
       >
@@ -104,7 +125,9 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
                 <div className="skeleton h-3 w-4/5" />
                 <div className="skeleton h-3 w-2/3" />
                 <p className="mt-2 text-xs text-[var(--text-faint)]">
-                  Reading tags, stitching and hardware…
+                  {deep
+                    ? 'Researching brand markers — this takes a couple of minutes…'
+                    : 'Reading tags, stitching and hardware…'}
                 </p>
               </div>
             )}
@@ -178,6 +201,26 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
                       ))}
                     </ul>
                   </section>
+                )}
+
+                {!deep && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeep(true);
+                      run(true);
+                    }}
+                    className="btn btn-ghost w-full text-sm"
+                  >
+                    <Globe size={15} />
+                    Research this brand too (slower, ~2 min)
+                  </button>
+                )}
+
+                {remaining !== null && (
+                  <p className="text-xs text-[var(--text-faint)]">
+                    {remaining} check{remaining === 1 ? '' : 's'} left today.
+                  </p>
                 )}
 
                 <p className="border-t border-[var(--hairline)] pt-3 text-xs text-[var(--text-faint)]">

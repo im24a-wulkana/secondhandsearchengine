@@ -98,3 +98,17 @@ alter table favorites add column if not exists initial_price numeric(12,2);
 alter table favorites add column if not exists price_checked_at timestamptz;
 -- Set when a listing 404s at the source.
 alter table favorites add column if not exists is_unavailable boolean not null default false;
+
+-- ---------------------------------------------------------------------------
+-- AI usage log — enforces per-user daily quotas on the paid endpoints
+-- ---------------------------------------------------------------------------
+create table if not exists ai_usage (
+  id        bigserial primary key,
+  user_id   uuid not null references users(id) on delete cascade,
+  feature   text not null,          -- 'authenticate' | 'image-search'
+  used_at   timestamptz not null default now()
+);
+
+-- The quota query counts a user's rows for one feature since a cutoff.
+create index if not exists ai_usage_user_feature_idx
+  on ai_usage (user_id, feature, used_at desc);

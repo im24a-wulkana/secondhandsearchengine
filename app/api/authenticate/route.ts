@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getClaude, isAiConfigured, AI_MODEL, fetchImageBlocks } from '@/lib/ai';
+import { checkQuota, recordUsage } from '@/lib/quota';
 
 /**
  * Counterfeit red-flag assistant.
@@ -22,7 +23,7 @@ Look for concrete, visible signals:
 - Construction: seam alignment, pattern matching, lining, edge finishing
 - Listing quality: stock photos rather than the actual item, missing tag shots, unusually low price for the model
 
-Use web search when the brand has documented, verifiable authentication markers (tag formats by era, serial layouts, known counterfeit tells). Prefer specific sourced facts over general advice.
+When web search is available, use it for documented authentication markers (tag formats by era, serial layouts, known counterfeit tells) and prefer sourced facts over general advice. When it is not available, work only from what the photos show and from what you already know — do not invent brand-specific claims you cannot support.
 
 Return findings as concerns and positives, each tied to what you can actually see. If the photos do not show enough — no tag shots, low resolution — say that plainly rather than speculating. Assume the buyer will act on what you write, so be precise about certainty.`;
 
@@ -34,6 +35,11 @@ type Body = {
   images?: string[];
   description?: string | null;
   platform?: string;
+  /**
+   * Opt in to brand research. Measured cost: ~15s without, ~170s with — the
+   * searches dominate the turn — so it is off unless asked for.
+   */
+  deepResearch?: boolean;
 };
 
 export const maxDuration = 120;
@@ -47,6 +53,12 @@ export async function POST(request: Request) {
       },
       { status: 503 },
     );
+  }
+
+  // Metered: this endpoint spends Anthropic credits, so it needs an identity.
+  const quota = await checkQuota('authenticate');
+  if (!quota.allowed) {
+    return NextResponse.json({ error: quota.error }, { status: quota.status });
   }
 
   try {
@@ -81,11 +93,17 @@ export async function POST(request: Request) {
 
     const response = await claude.messages.create({
       model: AI_MODEL,
-      max_tokens: 16000,
+      max_tokens: 8000,
       system: SYSTEM,
       thinking: { type: 'adaptive' },
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }],
+      // Web search is what makes this slow (~15s vs ~170s), so it is opt-in.
+      ...(body.deepResearch
+        ? { tools: [{ type: 'web_search_20260209' as const, name: 'web_search', max_uses: 2 }] }
+        : {}),
       output_config: {
+        // `medium` roughly halves the turn: this is observation from photos
+        // rather than deep reasoning, so the quality cost is small.
+        effort: 'medium',
         format: {
           type: 'json_schema',
           schema: {
@@ -165,10 +183,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No result was returned.' }, { status: 502 });
     }
 
+    // Recorded only on success, so a failed call never costs the user a check.
+    await recordUsage('authenticate', quota.user, quota.owner);
+
     return NextResponse.json({
       success: true,
       result: JSON.parse(text.text),
       imagesReviewed: imageBlocks.length,
+      remaining: quota.remaining,
+      deepResearch: Boolean(body.deepResearch),
     });
   } catch (error) {
     console.error('Authenticity check error:', error);
