@@ -194,13 +194,39 @@ export const RELEVANCE_FLOOR = 0.55;
  * Attaches a relevance score to every item and drops the unrelated tail.
  * Returns items ordered by relevance so "Relevance" sort is meaningful.
  */
+/**
+ * Round-robins across platforms so a block of equally-scored listings isn't
+ * dominated by whichever platform happened to be concatenated first.
+ */
+function interleaveByPlatform(items: Item[]): Item[] {
+  if (items.length < 2) return items;
+
+  const queues = new Map<string, Item[]>();
+  for (const item of items) {
+    const queue = queues.get(item.platform);
+    if (queue) queue.push(item);
+    else queues.set(item.platform, [item]);
+  }
+  if (queues.size < 2) return items;
+
+  const lists = [...queues.values()];
+  const out: Item[] = [];
+  for (let round = 0; out.length < items.length; round += 1) {
+    for (const list of lists) {
+      if (round < list.length) out.push(list[round]);
+    }
+  }
+  return out;
+}
+
 export function rankByRelevance(
   items: Item[],
   query: string,
   floor = RELEVANCE_FLOOR,
 ): { kept: Item[]; removed: number } {
   const terms = queryTerms(query);
-  if (terms.length === 0) return { kept: items, removed: 0 };
+  // Even with no usable terms, interleaving beats platform-block ordering.
+  if (terms.length === 0) return { kept: interleaveByPlatform(items), removed: 0 };
 
   const rarity = termRarity(items, terms);
 
@@ -209,10 +235,27 @@ export function rankByRelevance(
     relevance: scoreItem(item, terms, rarity),
   }));
 
-  const kept = scored
-    .filter((s) => s.relevance >= floor)
-    .sort((a, b) => b.relevance - a.relevance)
-    .map((s) => s.item);
+  const passing = scored.filter((s) => s.relevance >= floor);
+
+  /**
+   * Most listings that match every query term score an identical 1.0, and a
+   * stable sort then preserves the orchestrator's platform-by-platform order —
+   * which put all ~570 eBay results ahead of everything else. Grouping by
+   * score and interleaving within each group keeps ranking intact while
+   * mixing the platforms.
+   */
+  const buckets = new Map<number, Item[]>();
+  for (const entry of passing) {
+    // Round so near-identical scores share a bucket rather than splitting.
+    const key = Math.round(entry.relevance * 100) / 100;
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(entry.item);
+    else buckets.set(key, [entry.item]);
+  }
+
+  const kept = [...buckets.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .flatMap(([, bucket]) => interleaveByPlatform(bucket));
 
   return { kept, removed: items.length - kept.length };
 }

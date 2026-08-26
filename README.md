@@ -269,8 +269,20 @@ How a listing is scored (0–1 over the query terms):
 - **Anchor rule** — the rarest query term (usually the brand) *must* match.
   Without it, "Polar King jacket" passes on the garment word alone.
 
-Typical effect: ~150 of ~1,350 results removed for `carhartt jacket`. Pass
+Typical effect: ~280 of ~2,300 results removed for `carhartt jacket`. Pass
 `strict: false` to `/api/search` to skip filtering entirely.
+
+### Platform interleaving
+
+Most listings that contain every query term score an identical **1.0**, and
+`Array.sort` is stable — so ties kept the orchestrator's platform-by-platform
+concatenation, putting all ~570 eBay results ahead of everything else.
+
+Results are now grouped into score buckets and **round-robined across platforms
+within each bucket**. Ranking is untouched between tiers (a 1.0 still outranks
+a 0.7), but a tier is no longer dominated by whichever platform happened to be
+concatenated first. The top 100 for `carhartt jacket` went from 100% eBay to an
+even 20/20/20/20/20 split.
 
 ## Sizes
 
