@@ -20,11 +20,8 @@ export const PLATFORMS: Record<Platform, PlatformMeta> = {
   grailed: { id: 'grailed', label: 'Grailed', color: '#c9a227', home: 'https://www.grailed.com', live: true },
   vinted: { id: 'vinted', label: 'Vinted', color: '#3aa17e', home: 'https://www.vinted.com', live: true },
   poshmark: { id: 'poshmark', label: 'Poshmark', color: '#3f8fd0', home: 'https://poshmark.com', live: true },
+  ebay: { id: 'ebay', label: 'eBay', color: '#d1483c', home: 'https://www.ebay.com', live: true },
   mercari: { id: 'mercari', label: 'Mercari JP', color: '#e04a52', home: 'https://jp.mercari.com', live: true },
-  ebay: {
-    id: 'ebay', label: 'eBay', color: '#d1483c', home: 'https://www.ebay.com',
-    live: false, note: 'Awaiting API credentials',
-  },
   depop: {
     id: 'depop', label: 'Depop', color: '#a05fc4', home: 'https://www.depop.com',
     live: false, note: 'Blocked to automated access',

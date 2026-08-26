@@ -3,6 +3,7 @@
 Every secondhand rail, searched at once — one query across every live
 marketplace, normalised into a single ranked grid.
 
+**Live:** https://onerail-six.vercel.app
 **Run locally:** `npm run dev` → http://localhost:3000
 
 ## Features
@@ -69,8 +70,8 @@ marketplace, normalised into a single ranked grid.
 
 ## Current status of the data layer
 
-**Grailed, Vinted, Poshmark and Mercari JP are live and need no keys.** The
-other three still need credentials or a different approach:
+**Five marketplaces are live.** Grailed, Vinted, Poshmark and Mercari JP need
+no credentials; eBay uses its official API. The other three are blocked:
 
 | Platform   | Status                                                      |
 | ---------- | ----------------------------------------------------------- |
@@ -78,14 +79,33 @@ other three still need credentials or a different approach:
 | **Vinted** | ✅ **Live** — public catalog API via anonymous session cookies |
 | **Poshmark**| ✅ **Live** — internal JSON API, no key or browser needed      |
 | **Mercari JP**| ✅ **Live** — DPoP-signed public API, no account. Titles translated, prices converted to USD |
-| eBay       | Needs an OAuth **access token** in `EBAY_API_KEY` (an App ID alone won't authenticate) |
+| **eBay**   | ✅ **Live** — official Browse API; tokens minted and refreshed automatically |
 | Depop      | 403 to all requests; even a real browser on depop.com is CORS-blocked from its own API. Would need full Playwright DOM scraping |
 | Vestiaire  | Cloudflare. Its `search.vestiairecollective.com` POST API works **only from a real browser** — identical headers from Node still 403, so Cloudflare is fingerprinting the TLS handshake |
 | Facebook   | Stub — returns `[]`                                          |
 
-A search currently returns roughly **1,500 listings** (up to 500 Grailed, ~515
-Vinted, ~190 Poshmark, ~295 Mercari JP) in about 7-9 seconds. Supabase env vars are blank, so the
+A search currently returns roughly **2,080 listings** (~570 eBay, 500 Grailed,
+~520 Vinted, ~190 Poshmark, ~295 Mercari JP) in about 6-8 seconds. Supabase env vars are blank, so the
 favorites and saved-search routes return `503` rather than crashing.
+
+### How the eBay scraper works
+
+The only platform here with an official, sanctioned API. `lib/scrapers/ebay.ts`
+uses the **Browse API** with client-credentials OAuth.
+
+Access tokens expire after **2 hours**, so the scraper mints one from
+`EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` and caches it until a minute before
+expiry — there is no token to paste or refresh by hand.
+
+Gotchas:
+- Offsets are independent, so three pages of 200 run **in parallel** (~570
+  unique items in about a second).
+- eBay sends **finer-grained condition ids than it documents** — `2990`
+  ("Pre-owned - Excellent"), `3010` ("Fair"), `1750` ("New with imperfections").
+  Mapping only the documented set dropped the condition on 38% of listings, so
+  unknown ids fall back to a numeric range check.
+- Production keys additionally require the account-deletion endpoint — see
+  [DEPLOY.md](DEPLOY.md).
 
 ### How the Mercari JP scraper works
 
@@ -302,8 +322,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Optional, for admin operations
 
-# eBay API
-EBAY_API_KEY=your-ebay-api-key
+# eBay (App ID + Cert ID from the developer portal — not an "API key")
+EBAY_CLIENT_ID=your-app-id
+EBAY_CLIENT_SECRET=your-cert-id
 ```
 
 ## Project Structure

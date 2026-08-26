@@ -77,7 +77,13 @@ Expect `users`, `favorites`, `searches`, and the `popular_searches` view.
 | -------- | -------- | ------------ |
 | `DATABASE_URL` | yes, for accounts | Neon **pooled** connection string |
 | `AUTH_SECRET` | yes, for accounts | Signs session cookies. **32+ characters** |
-| `EBAY_API_KEY` | optional | eBay OAuth **access token**, not an App ID |
+| `EBAY_CLIENT_ID` | optional | eBay **App ID** from the developer portal |
+| `EBAY_CLIENT_SECRET` | optional | eBay **Cert ID** (the secret half of the pair) |
+| `EBAY_VERIFICATION_TOKEN` | for production keys | A value you invent — see section 5 |
+| `EBAY_DELETION_ENDPOINT` | for production keys | Your deployed endpoint URL |
+
+> There is no "eBay API key". The App ID + Cert ID are exchanged for a
+> short-lived OAuth token automatically, so nothing needs pasting or refreshing.
 
 Generate `AUTH_SECRET`:
 
@@ -100,7 +106,7 @@ account routes return `503`, and "Popular" falls back to a curated list.
 2. In Vercel, **Add New → Project** and import it. Next.js is detected
    automatically; no build settings to change.
 3. Under **Environment Variables**, add `DATABASE_URL`, `AUTH_SECRET`, and
-   optionally `EBAY_API_KEY`. Apply them to **Production, Preview, and
+   optionally the eBay variables. Apply them to **Production, Preview, and
    Development**.
 4. Deploy.
 
