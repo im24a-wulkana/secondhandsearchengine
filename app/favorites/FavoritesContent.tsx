@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Heart } from 'lucide-react';
+import { AlertTriangle, Heart, RefreshCw } from 'lucide-react';
 import type { Item } from '@/lib/types';
 import ItemCard from '@/components/ItemCard';
 import ListingDetail from '@/components/ListingDetail';
@@ -12,6 +12,8 @@ export default function FavoritesContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openItem, setOpenItem] = useState<Item | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -53,6 +55,34 @@ export default function FavoritesContent() {
     }
   }, [items]);
 
+  const refreshPrices = async () => {
+    setIsRefreshing(true);
+    setRefreshNote(null);
+    try {
+      const res = await fetch('/api/favorites/refresh', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? 'failed');
+
+      const changed = Array.isArray(data.changed) ? data.changed.length : 0;
+      setRefreshNote(
+        changed > 0
+          ? `${changed} price${changed === 1 ? '' : 's'} changed.`
+          : `Checked ${data.checked} listing${data.checked === 1 ? '' : 's'} — no changes.`,
+      );
+
+      // Re-read so the badges reflect what was just written.
+      const listing = await fetch('/api/favorites');
+      if (listing.ok) {
+        const fresh = await listing.json();
+        setItems(Array.isArray(fresh.data) ? fresh.data : []);
+      }
+    } catch {
+      setError('Could not refresh prices. Try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div
@@ -83,6 +113,25 @@ export default function FavoritesContent() {
         >
           <AlertTriangle size={18} className="mt-0.5 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={refreshPrices}
+            disabled={isRefreshing}
+            className="btn btn-secondary text-sm"
+          >
+            <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
+            {isRefreshing ? 'Checking prices…' : 'Check for price drops'}
+          </button>
+          {refreshNote && (
+            <span className="text-xs text-[var(--text-muted)]" role="status">
+              {refreshNote}
+            </span>
+          )}
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, Heart, ImageOff, Maximize2, X } from 'lucide-react';
 import type { Item } from '@/lib/types';
 import { PLATFORMS, formatPrice, relativeTime } from '@/lib/platforms';
+import AuthenticityCheck from './AuthenticityCheck';
 
 interface ListingDetailProps {
   item: Item | null;
@@ -239,7 +240,7 @@ export default function ListingDetail({
               </span>
               {item.original_price && (
                 <span className="tnum text-xs text-[var(--text-faint)]">
-                  {formatPrice(item.original_price.amount, item.original_price.currency)}
+                  {formatPrice(item.original_price.amount, item.original_price.currency)} listed
                 </span>
               )}
               {item.total_price != null && item.total_price > item.price && (
@@ -300,6 +301,8 @@ export default function ListingDetail({
                 </button>
               )}
             </div>
+
+            <AuthenticityCheck item={item} />
 
             {item.proxy && (
               <p className="rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--bg-subtle)] px-3 py-2 text-xs text-[var(--text-muted)]">

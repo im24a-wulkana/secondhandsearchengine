@@ -17,7 +17,8 @@ export async function GET() {
 
   const rows = await sql`
     select item_id, platform, title, price, currency, size, condition,
-           image_url, external_url, listed_at
+           image_url, external_url, listed_at,
+           initial_price, price_checked_at, is_unavailable
     from favorites
     where user_id = ${user.id}
     order by saved_at desc
@@ -35,6 +36,15 @@ export async function GET() {
     image_url: (row.image_url as string) ?? '',
     external_url: row.external_url as string,
     listed_at: row.listed_at ? new Date(row.listed_at as string).toISOString() : null,
+    // Only a genuine drop is surfaced; a rise isn't worth a badge.
+    saved_price:
+      row.initial_price != null && Number(row.initial_price) > Number(row.price ?? 0)
+        ? { amount: Number(row.initial_price), currency: (row.currency as string) ?? 'USD' }
+        : null,
+    unavailable: Boolean(row.is_unavailable),
+    price_checked_at: row.price_checked_at
+      ? new Date(row.price_checked_at as string).toISOString()
+      : null,
   }));
 
   return NextResponse.json({ success: true, data });

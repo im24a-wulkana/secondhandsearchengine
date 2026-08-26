@@ -107,6 +107,13 @@ Gotchas:
 - Production keys additionally require the account-deletion endpoint — see
   [DEPLOY.md](DEPLOY.md).
 
+### Image quality
+
+eBay's Browse API returns every thumbnail at `s-l225` — a 225px render that
+looks poor in the grid. The same path serves larger sizes, so
+`lib/scrapers/ebay.ts` rewrites the suffix: **s-l500** for cards (~35KB, up
+from ~13KB) and **s-l1200** for the detail gallery.
+
 ### How the Mercari JP scraper works
 
 Mercari's public search API requires a **DPoP proof** (RFC 9449) — a self-signed
@@ -218,12 +225,72 @@ during search, so the 500-listing Grailed page cost is unchanged.
 The route only accepts `platform=grailed` with a numeric id — it is a targeted
 gap-filler, not a general proxy.
 
+## Price tracking on saved listings
+
+Search results are always live, but `favorites` stores a snapshot, so a saved
+listing used to show its price at save time forever.
+
+**Check for price drops** on `/favorites` re-finds each saved listing (oldest
+checked first, 12 per run) and updates it. Changes are appended to
+`price_history`; a drop shows on the card as a struck-through original plus a
+**"N% off"** badge, and a listing that has vanished from its own title search
+is marked **No longer listed**.
+
+Two price fields exist and must not be conflated:
+- `saved_price` — what it cost when you saved it, set only on a genuine drop.
+- `original_price` — the pre-conversion figure for non-USD listings, rendered
+  as *"¥15,000 listed"*. Mercari sets this on every item.
+
+They started as one field, which produced a card reading *"$94 ¥15,000 — 99%
+off"* — a yen figure compared against dollars.
+
+It runs on demand rather than on page load because there is no cross-platform
+"fetch listing by id" endpoint — each item is re-found by searching its own
+title, which is several marketplace searches per batch.
+
+## AI features (optional)
+
+Both need `ANTHROPIC_API_KEY`. Without it they return a clear "not configured"
+message and nothing else in the app changes.
+
+### Search by photo
+
+The camera button in the search bar. A vision model names the brand, model and
+garment type in your photo and turns that into a search query, which then runs
+through the normal multi-platform search.
+
+It is **not** a reverse-image search — the marketplaces only accept text
+queries. The generated query is shown in an editable field with a confidence
+level before searching, because a wrong brand guess makes the search useless.
+
+### Counterfeit red-flag check
+
+A button on any opened listing. It reads the listing photos for known
+counterfeit tells — tag typography and spelling, embroidery stitch quality,
+hardware engraving, seam and pattern alignment — and uses web search for
+brand-specific authentication markers where they are documented.
+
+**It is deliberately not an authentication service and never returns a
+real/fake verdict.** A model reading a seller’s phone photos cannot do what a
+professional authenticator does: stitch density, hardware weight, material feel
+and date codes are not recoverable from listing images. It reports specific
+observations with a severity, what looks consistent, and what to verify before
+buying — and says plainly when the photos do not show enough to judge.
+
+That framing is a deliberate product decision: a confidence score reads as
+authoritative no matter the disclaimer, and a wrong "authentic" call on an
+expensive item is a real financial harm.
+
 ## Clothing-only filter
 
 Searching a fashion brand pulls in a lot of adjacent stock — eBay especially
 returns fragrance, cosmetics and homeware. `lib/apparel.ts` drops anything that
-isn't wearable. **Accessories count as wearable**: bags, sunglasses, watches,
-jewellery, belts, wallets and scarves are all kept.
+isn't wearable. **Anything worn or carried with an outfit is kept**: bags, sunglasses, watches,
+jewellery, belts, wallets, scarves, plus carried accessories like keychains,
+bag charms, pins, patches, phone cases, ties and socks.
+
+Only genuinely non-outfit goods are dropped — fragrance, cosmetics, homeware,
+media and toys.
 
 Two signals, checked in that order:
 
@@ -234,10 +301,19 @@ Two signals, checked in that order:
      (Home & Garden) and similar roots are rejected.
    - Mercari: ids in the 700–820 range are cosmetics/fragrance.
    - Grailed's index is apparel-only, so its listings always pass.
-2. **Title keywords**, only when a platform gives no usable category. A reject
-   word is ignored when a garment word appears alongside it, so
-   *"Dior Beauty Makeup **Bag**"* survives while *"Miss Dior Eau de Parfum"*
-   does not.
+2. **Title keywords**, only when a platform gives no usable category — which is
+   the case for Grailed and Poshmark. Three passes, in order:
+   - An explicit garment or accessory word wins outright, so *"Versace Perfume
+     Pouch Crossbody **Bag**"* and *"41 mm **Sunglasses**"* survive.
+   - Fragrance and cosmetics vocabulary (fragrance, EDT/EDP, lip balm, shower
+     gel, palette…).
+   - **Volume units** — `50mL`, `1.7 fl oz`, `150g`. Clothing states sizes, not
+     volumes. `oz` alone is exempted, because denim weights use it
+     (*"14oz denim jacket"*).
+
+Mercari's beauty categories are disjoint bands (782-785 fragrance, 1264-1290
+cosmetics, 3430-3450 skincare, 3570-3580 soaps, 3620-3640 misc), mapped by
+sampling its own taxonomy — apparel and footwear sit in 137-351.
 
 Typical effect on `dior`: ~250 of ~1,600 removed. Clothing-specific queries are
 untouched — `carhartt jacket` loses **zero**.

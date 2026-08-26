@@ -34,15 +34,24 @@ const EBAY_REJECT_ROOTS = new Set([
 const EBAY_ALLOW_ROOTS = new Set(['281', '11450']);
 
 /**
- * Mercari's fragrance/cosmetics categories cluster in the 700s-800s.
- * Ranges are used because the taxonomy is dense and undocumented.
+ * Mercari's beauty categories, mapped by sampling its own taxonomy:
+ * apparel and footwear sit in 137-351, while fragrance and cosmetics cluster
+ * in several disjoint bands. Ranges rather than an exhaustive list, because
+ * the taxonomy is dense, undocumented and changes.
  */
+const MERCARI_BEAUTY_RANGES: [number, number][] = [
+  [700, 820], // fragrance (782-785 observed) and beauty tools
+  [980, 985], // hair/body mists
+  [1260, 1290], // cosmetics: makeup, skincare, nails
+  [3430, 3450], // skincare sets and creams
+  [3570, 3580], // soaps and bath products
+  [3620, 3640], // misc beauty
+];
+
 function mercariIsApparel(categoryId: string): boolean {
   const n = Number.parseInt(categoryId, 10);
   if (!Number.isFinite(n)) return true; // Unknown: let the title decide.
-  // 700-820 covers cosmetics, fragrance and beauty tools.
-  if (n >= 700 && n <= 820) return false;
-  return true;
+  return !MERCARI_BEAUTY_RANGES.some(([lo, hi]) => n >= lo && n <= hi);
 }
 
 /** Grailed's own taxonomy is apparel-only, so its paths are always fine. */
@@ -51,16 +60,22 @@ function mercariIsApparel(categoryId: string): boolean {
 const REJECT_WORDS = [
   // Fragrance
   'perfume', 'parfum', 'cologne', 'fragrance', 'eau de toilette', 'eau de parfum',
-  'edt', 'edp', 'aftershave', 'body mist',
+  'edt', 'edp', 'edc', 'aftershave', 'body mist', 'hair mist', 'body spray',
+  'atomizer', 'atomiser', 'decant', 'splash', 'elixir', 'extrait',
   // Cosmetics
   'lipstick', 'lip gloss', 'mascara', 'eyeliner', 'eyeshadow', 'foundation',
   'concealer', 'blush', 'makeup', 'make-up', 'nail polish', 'serum', 'moisturizer',
   'moisturiser', 'cleanser', 'shampoo', 'conditioner', 'sunscreen', 'skincare',
-  // Homeware and misc
-  'mug', 'candle', 'poster', 'sticker', 'keychain', 'key chain', 'keyring',
-  'phone case', 'iphone case', 'airpods', 'mousepad', 'notebook', 'magazine',
-  'catalogue', 'catalog', 'brochure', 'dvd', 'cd', 'vinyl record',
-  'figure', 'figurine', 'plush', 'toy',
+  'lip balm', 'lip maximizer', 'eye cream', 'face cream', 'body lotion',
+  'shower gel', 'bath gel', 'body wash', 'soap', 'deodorant', 'toner',
+  'primer', 'powder', 'bronzer', 'highlighter', 'palette',
+  // Homeware, media and other non-outfit goods. Carried accessories
+  // (keychains, charms, phone cases) are deliberately NOT here — they are
+  // things people buy alongside an outfit and belong in results.
+  'mug', 'candle', 'poster', 'sticker', 'mousepad', 'notebook', 'magazine',
+  'catalogue', 'catalog', 'brochure', 'dvd', 'vinyl record', 'cd',
+  'figurine', 'plush', 'action figure', 'pillow', 'blanket', 'towel',
+  'furniture', 'chair', 'lamp', 'rug',
   // Empties and samples
   'empty bottle', 'sample vial', 'tester',
 ];
@@ -73,6 +88,10 @@ const APPAREL_WORDS = [
   'shoes', 'trainers', 'loafers', 'sandals', 'bag', 'backpack', 'tote', 'purse',
   'wallet', 'belt', 'scarf', 'gloves', 'hat', 'cap', 'beanie', 'sunglasses',
   'watch', 'necklace', 'bracelet', 'ring', 'earrings',
+  // Carried accessories — part of an outfit, so they stay in results.
+  'keychain', 'key chain', 'keyring', 'charm', 'pin', 'badge', 'patch',
+  'phone case', 'card holder', 'pouch', 'lanyard', 'cufflinks', 'tie',
+  'socks', 'sock', 'headband', 'bandana', 'umbrella',
 ];
 
 function hasWord(haystack: string, needle: string): boolean {
@@ -89,13 +108,35 @@ function hasWord(haystack: string, needle: string): boolean {
   return !isWordChar(before) && !isWordChar(after);
 }
 
-/** True when the title clearly describes something non-wearable. */
+/**
+ * Liquid/weight quantities that only appear on consumables — "50ml",
+ * "1.7 oz", "150g". Clothing listings state sizes, not volumes.
+ *
+ * Deliberately excludes bare grams under 10 and plain numbers, which show up
+ * as fabric weights ("14oz denim") — those are handled by requiring the unit
+ * to sit at a word boundary and by the apparel-word override below.
+ */
+const VOLUME_UNIT = new RegExp(
+  String.raw`\b\d{1,4}(?:[.,]\d{1,2})?\s?(?:ml|mls|cc|fl\.?\s?oz|floz|g|gr|grams?|kg)\b`,
+  'i',
+);
+
+/** Fabric weights legitimately use oz, so oz alone is not disqualifying. */
+const FABRIC_WEIGHT = new RegExp(String.raw`\b\d{1,2}(?:[.,]\d)?\s?oz\b`, 'i');
+
 export function titleLooksNonApparel(title: string): boolean {
   const text = title.toLowerCase();
-  const rejected = REJECT_WORDS.some((w) => hasWord(text, w));
-  if (!rejected) return false;
-  // A garment word present alongside means the reject word was incidental.
-  return !APPAREL_WORDS.some((w) => hasWord(text, w));
+
+  // An explicit garment word means any consumable signal was incidental
+  // ("Versace Perfume Pouch Crossbody Bag" is a bag).
+  if (APPAREL_WORDS.some((w) => hasWord(text, w))) return false;
+
+  if (REJECT_WORDS.some((w) => hasWord(text, w))) return true;
+
+  // A volume without a garment word: bottles, tubes, jars.
+  if (VOLUME_UNIT.test(text) && !FABRIC_WEIGHT.test(text)) return true;
+
+  return false;
 }
 
 /**

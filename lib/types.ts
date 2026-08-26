@@ -42,6 +42,15 @@ export type Item = {
    * aren't clothing. Shape varies per platform — see `lib/apparel.ts`.
    */
   category?: string | null;
+  /**
+   * Saved listings only: the price when saved, when it has since dropped.
+   * Distinct from `original_price`, which is the pre-conversion figure.
+   */
+  saved_price?: { amount: number; currency: string } | null;
+  /** Saved listings only: set when the listing 404s at its source. */
+  unavailable?: boolean;
+  /** Saved listings only: when the price was last re-checked. */
+  price_checked_at?: string | null;
 };
 
 export type Filters = {

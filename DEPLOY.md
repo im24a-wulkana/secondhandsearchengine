@@ -77,6 +77,7 @@ Expect `users`, `favorites`, `searches`, and the `popular_searches` view.
 | -------- | -------- | ------------ |
 | `DATABASE_URL` | yes, for accounts | Neon **pooled** connection string |
 | `AUTH_SECRET` | yes, for accounts | Signs session cookies. **32+ characters** |
+| `ANTHROPIC_API_KEY` | optional | Powers photo search and the counterfeit check. Without it both return "not configured" |
 | `EBAY_CLIENT_ID` | optional | eBay **App ID** from the developer portal |
 | `EBAY_CLIENT_SECRET` | optional | eBay **Cert ID** (the secret half of the pair) |
 | `EBAY_VERIFICATION_TOKEN` | for production keys | A value you invent — see section 5 |
@@ -112,8 +113,11 @@ account routes return `503`, and "Popular" falls back to a curated list.
 
 ### Notes
 
-- `vercel.json` raises the timeout for `/api/search` (30s) and
-  `/api/recommendations` (60s). The defaults are too short: a search fans out to
+- `vercel.json` raises function timeouts: `/api/search` 30s,
+  `/api/image-search` 60s, `/api/recommendations` 60s, and 300s for
+  `/api/authenticate` and `/api/favorites/refresh`. An authenticity check reads
+  up to 8 photos and runs web search — around 80s in practice, far past
+  Vercel's 10s default. The defaults are too short: a search fans out to
   three marketplaces, and the feed runs three searches.
 - Playwright is a **dev** dependency and is not installed on Vercel. It is only
   used for local screenshot testing.
@@ -148,6 +152,10 @@ not need this — skip the section if you only want to test.
 
 It cannot be completed on localhost: eBay must reach a public HTTPS URL, so
 deploy first.
+
+> **After adding or changing any variable, redeploy** — env changes do not
+> apply to existing deployments. And if the schema changed since your last
+> deploy, run `npm run db:setup` before the new build goes live.
 
 **1. Set two variables in Vercel** (Production at minimum):
 

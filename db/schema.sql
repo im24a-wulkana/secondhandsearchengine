@@ -74,3 +74,27 @@ where created_at > now() - interval '30 days'
   and result_count > 0
 group by query_key
 order by search_count desc, last_searched_at desc;
+
+-- ---------------------------------------------------------------------------
+-- Price history for saved listings
+-- ---------------------------------------------------------------------------
+-- `favorites.price` holds the current price; every observed change also lands
+-- here so the UI can show "was $200, now $150".
+create table if not exists price_history (
+  id         bigserial primary key,
+  favorite_id uuid not null references favorites(id) on delete cascade,
+  price      numeric(12,2) not null,
+  currency   text,
+  seen_at    timestamptz not null default now()
+);
+
+create index if not exists price_history_favorite_idx
+  on price_history (favorite_id, seen_at desc);
+
+-- Price at the moment the listing was saved, so a drop can be measured even
+-- before any refresh has run.
+alter table favorites add column if not exists initial_price numeric(12,2);
+-- Null until the first refresh; distinguishes "never checked" from "unchanged".
+alter table favorites add column if not exists price_checked_at timestamptz;
+-- Set when a listing 404s at the source.
+alter table favorites add column if not exists is_unavailable boolean not null default false;

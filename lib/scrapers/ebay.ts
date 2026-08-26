@@ -172,13 +172,25 @@ function extractSize(title: string): string | null {
   return null;
 }
 
+/**
+ * eBay serves every search thumbnail at s-l225, which looks poor in the grid.
+ * The same path serves larger renders, so the suffix is swapped: 500 for cards,
+ * 1200 for the detail gallery.
+ */
+function upscale(url: string, size: 500 | 1200): string {
+  if (!url) return url;
+  return url.replace(/\/s-l\d+\.(jpg|jpeg|png|webp)/i, `/s-l${size}.$1`);
+}
+
 function toItem(raw: EbayItem): Item {
   const title = raw.title ?? 'Untitled listing';
   const amount = Number.parseFloat(raw.price?.value ?? '');
-  const cover = raw.image?.imageUrl ?? raw.thumbnailImages?.[0]?.imageUrl ?? '';
+  const rawCover = raw.image?.imageUrl ?? raw.thumbnailImages?.[0]?.imageUrl ?? '';
+  const cover = upscale(rawCover, 500);
   const extra = (raw.additionalImages ?? [])
     .map((i) => i.imageUrl)
-    .filter((u): u is string => Boolean(u));
+    .filter((u): u is string => Boolean(u))
+    .map((u) => upscale(u, 1200));
 
   const feedback = Number.parseFloat(raw.seller?.feedbackPercentage ?? '');
 
@@ -194,7 +206,8 @@ function toItem(raw: EbayItem): Item {
     external_url: raw.itemWebUrl ?? '',
     listed_at: raw.itemCreationDate ?? null,
 
-    images: cover ? [cover, ...extra] : extra,
+    // The gallery gets the large render; the card keeps the mid-size one.
+    images: rawCover ? [upscale(rawCover, 1200), ...extra] : extra,
     description: null,
     brand: null,
     // Comma-joined ids so the apparel filter can test the whole tree.

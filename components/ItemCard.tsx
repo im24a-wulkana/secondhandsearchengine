@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { Heart, ImageOff, Plane } from 'lucide-react';
+import { Heart, ImageOff, Plane, TrendingDown } from 'lucide-react';
 import type { Item } from '@/lib/types';
 import { PLATFORMS, formatPrice, relativeTime } from '@/lib/platforms';
 
@@ -103,8 +103,15 @@ export default function ItemCard({
         </h3>
 
         <div className="mt-auto flex items-baseline justify-between gap-2 pt-1">
-          <span className="tnum text-base font-semibold text-[var(--accent)]">
-            {formatPrice(item.price, item.currency)}
+          <span className="flex items-baseline gap-1.5">
+            <span className="tnum text-base font-semibold text-[var(--accent)]">
+              {formatPrice(item.price, item.currency)}
+            </span>
+            {item.saved_price && item.saved_price.amount > item.price && (
+              <span className="tnum text-[11px] text-[var(--text-faint)] line-through">
+                {formatPrice(item.saved_price.amount, item.saved_price.currency)}
+              </span>
+            )}
           </span>
           {listed && (
             <time
@@ -115,6 +122,19 @@ export default function ItemCard({
             </time>
           )}
         </div>
+
+        {item.saved_price && item.saved_price.amount > item.price && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-[var(--r-sm)] bg-[var(--accent-wash)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+            <TrendingDown size={10} />
+            {Math.round((1 - item.price / item.saved_price.amount) * 100)}% off
+          </span>
+        )}
+
+        {item.unavailable && (
+          <span className="inline-flex w-fit items-center rounded-[var(--r-sm)] border border-[var(--danger)] px-1.5 py-0.5 text-[10px] text-[var(--danger)]">
+            No longer listed
+          </span>
+        )}
 
         {item.proxy && (
           <span

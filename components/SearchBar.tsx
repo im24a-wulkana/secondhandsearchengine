@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { FormEvent, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
+import ImageSearch from './ImageSearch';
 
 interface SearchBarProps {
   /** Prefills the input, e.g. on the results page. */
@@ -64,6 +65,8 @@ export default function SearchBar({
             <X size={16} />
           </button>
         )}
+
+        <ImageSearch />
 
         <button type="submit" className={`btn btn-primary ${large ? '' : '!py-1.5 !px-3 text-sm'}`}>
           Search
