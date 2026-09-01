@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, ExternalLink, Heart, ImageOff, Maximize2, X 
 import type { Item } from '@/lib/types';
 import { PLATFORMS, formatPrice, relativeTime } from '@/lib/platforms';
 import AuthenticityCheck from './AuthenticityCheck';
+import PriceComparison from './PriceComparison';
 
 interface ListingDetailProps {
   item: Item | null;
@@ -301,6 +302,8 @@ export default function ListingDetail({
                 </button>
               )}
             </div>
+
+            <PriceComparison item={item} />
 
             <AuthenticityCheck
               item={item}
