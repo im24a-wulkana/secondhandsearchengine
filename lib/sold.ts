@@ -1,7 +1,7 @@
 import { generateKeyPair, exportJWK, SignJWT } from 'jose';
 import { randomUUID } from 'node:crypto';
 import { getUsdRate, toUsd } from './currency';
-import { queryTerms, scoreItem } from './relevance';
+import { queryTerms, scoreItem, tokenize } from './relevance';
 import type { Item, Platform } from './types';
 
 /**
@@ -217,6 +217,139 @@ async function mercariSold(query: string): Promise<SoldListing[]> {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Query condensing                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Words that describe a specific copy of a garment rather than the model, so
+ * they narrow a sold-comparables search without making it more accurate.
+ * Colours and sizes matter to a buyer but rarely move the resale price enough
+ * to justify losing the whole sample.
+ */
+const INCIDENTAL = new Set([
+  'vintage', 'retro', 'og', 'deadstock', 'nwt', 'nwot', 'bnwt', 'euc', 'vguc',
+  'black', 'white', 'grey', 'gray', 'blue', 'red', 'green', 'brown', 'beige',
+  'navy', 'cream', 'tan', 'olive', 'khaki', 'pink', 'purple', 'yellow', 'orange',
+  'small', 'medium', 'large', 'xl', 'xxl', 'xs', 's', 'm', 'l', 'sz',
+  'mens', 'womens', 'men', 'women', 'unisex', 'size', 'authentic', 'genuine',
+  'cotton', 'wool', 'nylon', 'polyester', 'fleece', 'knit',
+  'cable', 'lined', 'zip', 'button', 'crew', 'slim', 'regular', 'fit', 'style',
+  'free', 'shipping', 'fast', 'rare', 'htf', 'vtg', 'super', 'very', 'great',
+]);
+
+/** Algolia ANDs every token, so past this length a title matches nothing. */
+const MAX_QUERY_TERMS = 4;
+
+/**
+ * Season codes such as AW07 or SS2009. In archive fashion these identify the
+ * exact collection and are the single strongest signal in a title, so they are
+ * kept even though they look like the noise the digit filter removes.
+ */
+const SEASON_CODE = /^(?:aw|ss|fw|pre)\d{2,4}$/;
+
+/** Leading articles in a model name; alone they carry no search signal. */
+const ARTICLES = new Set(['the', 'a', 'an', 'le', 'la']);
+
+/** Garment nouns, which set the price bracket: Dior jeans and a Dior wallet
+ * share a brand and nothing else. Drawn from the search synonym sets so the
+ * two stay consistent. */
+const GARMENT_WORDS = new Set([
+  'jacket', 'coat', 'anorak', 'parka', 'windbreaker', 'bomber', 'overshirt', 'shacket',
+  'hoodie', 'hoody', 'sweatshirt', 'pullover', 'crewneck', 'sweater', 'jumper', 'cardigan',
+  'pants', 'trousers', 'chinos', 'slacks', 'jeans', 'denim',
+  'sneakers', 'trainers', 'shoes', 'boots', 'boot',
+  'tee', 'tshirt', 'shirt', 'top', 'blazer', 'suit', 'vest', 'gilet',
+  'shorts', 'skirt', 'dress', 'bag', 'backpack', 'tote', 'wallet', 'belt',
+  'cap', 'hat', 'beanie', 'scarf', 'gloves',
+]);
+
+/** Words that mark a listing's condition or logistics rather than the item. */
+const NOISE = new Set([
+  'traded', 'sold', 'reserved', 'bundle', 'offers', 'offer', 'price', 'drop',
+  'worn', 'used', 'nwt', 'nwot', 'bnwt', 'euc', 'vguc', 'deadstock', 'ds',
+]);
+
+/**
+ * Turns a listing title into a query broad enough to find comparables but
+ * narrow enough that they are the same garment.
+ *
+ * Grailed's sold index ANDs every token, so a full title like "Vintage Polo
+ * Ralph Lauren Sweater Mens Large Blue Cable Knit Cotton" returns zero hits and
+ * silently drops the platform. Simply truncating to the first few words fails
+ * the other way: titles do not put the identifying part first, so "Dior Homme
+ * AW04 'VOTC' Split Collar Shirt" can reduce to a bare brand and match every
+ * Dior item ever sold, from $70 trousers to $2600 outerwear.
+ *
+ * So terms are chosen by what they signal rather than where they sit: the
+ * brand-ish opening words, any season code, a quoted model name, and the
+ * garment noun that fixes the price bracket.
+ */
+export function condenseQuery(title: string): string {
+  // Quoted model names ("Reflexion", 'Nostalgy') survive only if read before
+  // tokenize() strips the quote marks.
+  const quoted = [...title.matchAll(/['"‘’“”]([^'"‘’“”]{2,24})['"‘’“”]/g)]
+    .map((m) =>
+      tokenize(m[1])
+        .filter((t) => !NOISE.has(t))
+        // A bare "the" matches nothing on an AND index while looking like a
+        // real term, so a quoted "The End" keeps only "end".
+        .filter((t, i, arr) => !(i === 0 && arr.length > 1 && ARTICLES.has(t)))
+        .filter((t) => t.length > 1)
+        .slice(0, 2)
+        .join(' '),
+    )
+    .filter((phrase) => phrase.length > 1);
+
+  const tokens = tokenize(title).filter((t) => !NOISE.has(t));
+
+  const seasons = tokens.filter((t) => SEASON_CODE.test(t));
+  const garments = tokens.filter((t) => GARMENT_WORDS.has(t));
+  const plain = tokens.filter(
+    (t) =>
+      t.length > 1 &&
+      !INCIDENTAL.has(t) &&
+      !ARTICLES.has(t) &&
+      !SEASON_CODE.test(t) &&
+      !GARMENT_WORDS.has(t) &&
+      !/^\d+$/.test(t),
+  );
+
+  // Brand first (the leading plain words), then the sharpest identifiers. A
+  // season code or model name narrows far more than a third brand word, and the
+  // garment noun goes last so it is the first thing dropped by the cap only
+  // when something more specific is present.
+  const picked: string[] = [];
+  let words = 0;
+  const add = (term: string) => {
+    const cost = term.split(' ').length;
+    if (words + cost <= MAX_QUERY_TERMS && !picked.includes(term)) {
+      picked.push(term);
+      words += cost;
+    }
+  };
+
+  plain.slice(0, 2).forEach(add);
+  // A model name identifies the garment better than the season it shipped in,
+  // and ANDing both ("dior homme ss06 end") matches almost nothing, since few
+  // sold titles carry the season and the name together. So they are
+  // alternatives, not additions.
+  const modelName =
+    quoted[0] ?? plain.slice(2).find((t) => !ARTICLES.has(t) && !GARMENT_WORDS.has(t));
+  if (modelName) add(modelName);
+  else seasons.slice(0, 1).forEach(add);
+  // An unquoted model name ("The End", "Planisphere") sits among the remaining
+  // plain words. Without a brand list there is no way to know which word it is,
+  // but a word the brand words did not already cover is more identifying than
+  // the garment noun, so it takes the next slot.
+  garments.slice(0, 1).forEach(add);
+  // Backfill from whatever is left if the title was unusually sparse.
+  plain.slice(3).forEach(add);
+
+  if (picked.length === 0) return queryTerms(title).slice(0, MAX_QUERY_TERMS).join(' ');
+  return picked.join(' ');
+}
+
+/* -------------------------------------------------------------------------- */
 /* Aggregate                                                                   */
 /* -------------------------------------------------------------------------- */
 
@@ -271,15 +404,23 @@ export async function comparePrice(
   const searchTerm = (query ?? item.title).trim();
   if (!searchTerm) return null;
 
+  // Fetch on a condensed query — a full listing title ANDs to zero hits on
+  // Grailed — but keep the original for scoring below, so a broader fetch
+  // doesn't become a looser sample.
+  const fetchTerm = query ? searchTerm : condenseQuery(item.title) || searchTerm;
+
   const [grailed, poshmark, mercari] = await Promise.all([
-    grailedSold(searchTerm),
-    poshmarkSold(searchTerm),
-    mercariSold(searchTerm),
+    grailedSold(fetchTerm),
+    poshmarkSold(fetchTerm),
+    mercariSold(fetchTerm),
   ]);
 
   // Score every sold title against the query the same way search results are
-  // ranked, so an unrelated sale can't drag the median around.
-  const terms = queryTerms(searchTerm);
+  // ranked, so an unrelated sale can't drag the median around. Scoring uses the
+  // same condensed terms as the fetch: a genuine comparable is usually titled
+  // more tersely than the listing, and demanding every word of a long title
+  // back would reject the whole sample.
+  const terms = queryTerms(fetchTerm);
   const rarity = new Map<string, number>();
   for (const term of terms) rarity.set(term, 1);
 
