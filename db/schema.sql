@@ -112,3 +112,29 @@ create table if not exists ai_usage (
 -- The quota query counts a user's rows for one feature since a cutoff.
 create index if not exists ai_usage_user_feature_idx
   on ai_usage (user_id, feature, used_at desc);
+
+-- ---------------------------------------------------------------------------
+-- Saved searches
+-- ---------------------------------------------------------------------------
+-- A user pins a query plus its filters and comes back to see what is new.
+create table if not exists saved_searches (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references users(id) on delete cascade,
+  name          text not null,
+  query         text not null,
+  -- Filters as sent to /api/search, so a saved search reproduces exactly.
+  filters       jsonb not null default '{}'::jsonb,
+  -- Listing ids seen at the last check. Diffing against a fresh run is what
+  -- makes "new since you last looked" possible without storing every listing.
+  seen_ids      text[] not null default '{}',
+  total_at_last_check integer not null default 0,
+  new_count     integer not null default 0,
+  last_checked_at timestamptz,
+  created_at    timestamptz not null default now()
+);
+
+-- One saved search per query per user; lets the API upsert on re-save.
+create unique index if not exists saved_searches_user_query_idx
+  on saved_searches (user_id, lower(query));
+create index if not exists saved_searches_user_created_idx
+  on saved_searches (user_id, created_at desc);

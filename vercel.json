@@ -15,6 +15,9 @@
     },
     "app/api/favorites/refresh/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/saved-searches/check/route.ts": {
+      "maxDuration": 300
     }
   }
 }

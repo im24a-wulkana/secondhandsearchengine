@@ -9,6 +9,7 @@ import FilterPanel, { countActiveFilters } from '@/components/FilterPanel';
 import ResultsGrid, { applyFilters, type SortKey } from '@/components/ResultsGrid';
 import SearchBar from '@/components/SearchBar';
 import SearchHistory from '@/components/SearchHistory';
+import SaveSearchButton from '@/components/SaveSearchButton';
 import ListingDetail from '@/components/ListingDetail';
 import { PLATFORMS, LIVE_PLATFORM_COUNT, spellNumber } from '@/lib/platforms';
 import { recordSearch } from '@/lib/history';
@@ -171,7 +172,9 @@ export default function SearchContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <SaveSearchButton query={query} filters={filters} items={items} />
+
           {(nonApparelFiltered > 0 || !apparelOnly) && (
             <button
               type="button"

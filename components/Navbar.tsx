@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Heart, LogOut, Menu, Search, Sparkles, X } from 'lucide-react';
+import { Bookmark, Heart, LogOut, Menu, Search, Sparkles, X } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useSession } from './SessionProvider';
 
@@ -40,6 +40,7 @@ export default function Navbar() {
     <>
       {navLink('/search', 'Search', <Search size={16} />)}
       {navLink('/for-you', 'For you', <Sparkles size={16} />)}
+      {navLink('/saved-searches', 'Searches', <Bookmark size={16} />)}
       {navLink('/favorites', 'Saved', <Heart size={16} />)}
     </>
   );

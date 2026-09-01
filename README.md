@@ -225,6 +225,31 @@ during search, so the 500-listing Grailed page cost is unchanged.
 The route only accepts `platform=grailed` with a numeric id — it is a targeted
 gap-filler, not a general proxy.
 
+## Saved searches
+
+Pin a query plus its filters and see what has appeared since you last looked.
+**Save search** sits next to the filters on any results page; the list lives at
+`/saved-searches`. Members only, up to 20 per account.
+
+**How "new" is counted.** Each saved search keeps the listing ids it has already
+seen (`seen_ids`). A check re-runs the search and counts ids absent from that
+set — so "new" means genuinely new to you, not merely a changed total. A result
+count can stay flat while the contents turn over completely.
+
+The listings visible when you save become the baseline, so the first check does
+not report everything already on screen as new.
+
+The check applies the **same apparel filter, relevance ranking and saved
+refinements** as the results page. Skipping any of them would produce a count
+that did not match what you see when you open the search.
+
+Two bounds worth knowing:
+- Five searches per run (checked stalest-first), because each is a full
+  marketplace fan-out.
+- `seen_ids` is capped at 3,000 entries so a broad query cannot grow the row
+  without limit; ids are merged newest-first so nothing drops out and then
+  reappears as "new".
+
 ## Price tracking on saved listings
 
 Search results are always live, but `favorites` stores a snapshot, so a saved
