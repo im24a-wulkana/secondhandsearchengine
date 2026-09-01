@@ -235,6 +235,8 @@ const INCIDENTAL = new Set([
   'cotton', 'wool', 'nylon', 'polyester', 'fleece', 'knit',
   'cable', 'lined', 'zip', 'button', 'crew', 'slim', 'regular', 'fit', 'style',
   'free', 'shipping', 'fast', 'rare', 'htf', 'vtg', 'super', 'very', 'great',
+  'iconic', 'classic', 'original', 'official', 'premium', 'luxury', 'designer',
+  'mint', 'clean', 'crazy', 'insane', 'grail', 'archive', 'piece', 'item',
 ]);
 
 /** Algolia ANDs every token, so past this length a title matches nothing. */
@@ -246,6 +248,9 @@ const MAX_QUERY_TERMS = 4;
  * kept even though they look like the noise the digit filter removes.
  */
 const SEASON_CODE = /^(?:aw|ss|fw|pre)\d{2,4}$/;
+
+/** Decade markers like "90s" or "1990s" — era, not model. */
+const DECADE = /^(?:19|20)?\d0s$/;
 
 /** Leading articles in a model name; alone they carry no search signal. */
 const ARTICLES = new Set(['the', 'a', 'an', 'le', 'la']);
@@ -262,6 +267,97 @@ const GARMENT_WORDS = new Set([
   'shorts', 'skirt', 'dress', 'bag', 'backpack', 'tote', 'wallet', 'belt',
   'cap', 'hat', 'beanie', 'scarf', 'gloves',
 ]);
+
+/* -------------------------------------------------------------------------- */
+/* Garment category                                                            */
+/* -------------------------------------------------------------------------- */
+
+export type Garment =
+  | 'outerwear'
+  | 'hoodie'
+  | 'knitwear'
+  | 'shirt'
+  | 'tee'
+  | 'longsleeve'
+  | 'jeans'
+  | 'pants'
+  | 'shorts'
+  | 'skirt'
+  | 'dress'
+  | 'footwear'
+  | 'bag'
+  | 'accessory';
+
+/**
+ * Patterns that decide what a listing actually is, so a $900 tee is not priced
+ * against hoodies. Japanese terms are included because Mercari titles arrive
+ * untranslated here — translating every sold title would mean a DeepL call per
+ * comparison, which is too slow and burns quota.
+ *
+ * Order matters: the first match wins, so more specific categories come first.
+ * "denim jacket" must read as outerwear rather than jeans, and a long-sleeve
+ * tee must not be compared against short-sleeve ones.
+ */
+const GARMENT_PATTERNS: [Garment, RegExp][] = [
+  [
+    'outerwear',
+    /\b(jacket|coat|anorak|parka|windbreaker|bomber|blazer|overshirt|shacket|outerwear|peacoat|trench|puffer|vest|gilet)\b|ジャケット|コート|ブルゾン|アウター|ダウン|ベスト/i,
+  ],
+  ['hoodie', /\b(hoodie|hoody|hooded)\b|パーカー|フーディ/i],
+  [
+    'knitwear',
+    /\b(sweater|knitwear|cardigan|jumper|crewneck|sweatshirt|pullover|fleece)\b|ニット|セーター|カーディガン|スウェット|トレーナー/i,
+  ],
+  // Long sleeve before tee: "long sleeve tee" is its own bracket.
+  ['longsleeve', /\b(long[\s-]?sleeve|longsleeve|l\/s)\b|ロンt|ロングスリーブ|長袖/i],
+  // Tee before shirt: "Tシャツ" is a T-shirt, but a bare シャツ pattern would
+  // claim it first and price tees against button-ups.
+  ['tee', /\b(tee|t[\s-]?shirt|tshirt)\b|[tTｔ]シャツ|ティーシャツ|半袖/i],
+  [
+    'shirt',
+    /\b(shirt|button[\s-]?up|button[\s-]?down|oxford|flannel|polo)\b|(?<![tTｔ]|ティー)シャツ(?!ワンピ)|ポロ/i,
+  ],
+  ['jeans', /\b(jeans|denim pants)\b|デニム|ジーンズ|ジーパン/i],
+  ['shorts', /\b(shorts)\b|ショーツ|ハーフパンツ|短パン/i],
+  ['pants', /\b(pants|trousers|chinos|slacks|cargos|joggers|sweatpants)\b|パンツ|スラックス|ズボン/i],
+  ['skirt', /\b(skirt)\b|スカート/i],
+  ['dress', /\b(dress|gown)\b|ワンピース|ドレス/i],
+  [
+    'footwear',
+    /\b(sneakers|trainers|shoes|boots|boot|loafers|sandals|slides)\b|スニーカー|シューズ|ブーツ|靴/i,
+  ],
+  ['bag', /\b(bag|backpack|rucksack|tote|duffle|pouch|clutch)\b|バッグ|リュック|カバン/i],
+  [
+    'accessory',
+    /\b(wallet|belt|cap|hat|beanie|scarf|gloves|socks|tie|sunglasses|watch|necklace|bracelet|ring|keychain)\b|財布|ベルト|帽子|マフラー|手袋|靴下/i,
+  ],
+];
+
+/**
+ * Best guess at what a title is selling, or null when nothing matches — a title
+ * like "Dior Homme Hedi 05 indigo" names no garment at all.
+ */
+export function garmentOf(title: string): Garment | null {
+  for (const [garment, pattern] of GARMENT_PATTERNS) {
+    if (pattern.test(title)) return garment;
+  }
+  return null;
+}
+
+/**
+ * Categories close enough that mixing them keeps a sample honest while
+ * salvaging comparables, since sellers use these labels interchangeably.
+ */
+const INTERCHANGEABLE: Garment[][] = [
+  ['shirt', 'longsleeve'],
+  ['pants', 'jeans'],
+];
+
+/** Whether a sold listing is the same kind of garment as the one being priced. */
+function sameGarment(target: Garment, candidate: Garment): boolean {
+  if (target === candidate) return true;
+  return INTERCHANGEABLE.some((group) => group.includes(target) && group.includes(candidate));
+}
 
 /** Words that mark a listing's condition or logistics rather than the item. */
 const NOISE = new Set([
@@ -285,9 +381,11 @@ const NOISE = new Set([
  * garment noun that fixes the price bracket.
  */
 export function condenseQuery(title: string): string {
-  // Quoted model names ("Reflexion", 'Nostalgy') survive only if read before
-  // tokenize() strips the quote marks.
-  const quoted = [...title.matchAll(/['"‘’“”]([^'"‘’“”]{2,24})['"‘’“”]/g)]
+  // Quoted model names ("Reflexion") survive only if read before tokenize()
+  // strips the quote marks. Apostrophes are deliberately not treated as
+  // delimiters: in "Men's classic 90's" they would capture "s classic 90" and
+  // outrank the words that actually identify the garment.
+  const quoted = [...title.matchAll(/["“”]([^"“”]{2,24})["“”]/g)]
     .map((m) =>
       tokenize(m[1])
         .filter((t) => !NOISE.has(t))
@@ -309,15 +407,14 @@ export function condenseQuery(title: string): string {
       t.length > 1 &&
       !INCIDENTAL.has(t) &&
       !ARTICLES.has(t) &&
+      !DECADE.test(t) &&
       !SEASON_CODE.test(t) &&
       !GARMENT_WORDS.has(t) &&
       !/^\d+$/.test(t),
   );
 
-  // Brand first (the leading plain words), then the sharpest identifiers. A
-  // season code or model name narrows far more than a third brand word, and the
-  // garment noun goes last so it is the first thing dropped by the cap only
-  // when something more specific is present.
+  // Brand first (the leading plain words), then the sharpest identifier
+  // available, then the garment noun that fixes the price bracket.
   const picked: string[] = [];
   let words = 0;
   const add = (term: string) => {
@@ -328,24 +425,37 @@ export function condenseQuery(title: string): string {
     }
   };
 
-  plain.slice(0, 2).forEach(add);
+  // Reserve a slot for the garment noun so brand and model words cannot crowd
+  // out the one term that fixes the price bracket.
+  // Prefer the noun matching the detected category: "Denim Jacket" lists
+  // "denim" first, but the jacket is what it is.
+  const category = garmentOf(title);
+  const garmentTerm =
+    garments.find((g) => garmentOf(g) === category) ?? garments[0];
+  const brandSlots = Math.max(1, garmentTerm ? MAX_QUERY_TERMS - 2 : MAX_QUERY_TERMS - 1);
+  const brandWords = plain.slice(0, brandSlots);
+  brandWords.forEach(add);
+
   // A model name identifies the garment better than the season it shipped in,
   // and ANDing both ("dior homme ss06 end") matches almost nothing, since few
   // sold titles carry the season and the name together. So they are
-  // alternatives, not additions.
-  const modelName =
-    quoted[0] ?? plain.slice(2).find((t) => !ARTICLES.has(t) && !GARMENT_WORDS.has(t));
+  // alternatives, not additions. It is taken from whatever the brand words did
+  // not already consume, which moves with brandSlots rather than a fixed index.
+  const modelName = quoted[0] ?? plain[brandWords.length];
   if (modelName) add(modelName);
   else seasons.slice(0, 1).forEach(add);
-  // An unquoted model name ("The End", "Planisphere") sits among the remaining
-  // plain words. Without a brand list there is no way to know which word it is,
-  // but a word the brand words did not already cover is more identifying than
-  // the garment noun, so it takes the next slot.
-  garments.slice(0, 1).forEach(add);
-  // Backfill from whatever is left if the title was unusually sparse.
-  plain.slice(3).forEach(add);
 
-  if (picked.length === 0) return queryTerms(title).slice(0, MAX_QUERY_TERMS).join(' ');
+  if (garmentTerm) add(garmentTerm);
+  // Backfill from whatever is left if the title was unusually sparse.
+  plain.slice(brandWords.length + 1).forEach(add);
+
+  // A wholly non-Latin title ("ディオールオム シャツ") has no tokens left after
+  // filtering, and an empty query would fetch nothing at all. Fall back to the
+  // raw words so the search still runs.
+  if (picked.length === 0) {
+    const fallback = queryTerms(title).slice(0, MAX_QUERY_TERMS).join(' ');
+    return fallback || tokenize(title).slice(0, MAX_QUERY_TERMS).join(' ') || title.trim();
+  }
   return picked.join(' ');
 }
 
@@ -375,6 +485,11 @@ export type PriceComparison = {
   recent: SoldListing[];
   /** Platforms with no usable sold data, so the UI can say why. */
   unavailable: Platform[];
+  /**
+   * The garment the sample was restricted to, or null when the title named none
+   * and comparables could only be matched on wording.
+   */
+  garment: Garment | null;
 };
 
 /** Below this a median is noise rather than a signal. */
@@ -424,7 +539,20 @@ export async function comparePrice(
   const rarity = new Map<string, number>();
   for (const term of terms) rarity.set(term, 1);
 
+  // Restrict to the same kind of garment. The query already carries a garment
+  // noun, but none of the three platforms requires it to match: Algolia scores
+  // loosely and Poshmark and Mercari do not AND terms at all, so without this a
+  // tee gets priced against hoodies and long-sleeves.
+  const garment = garmentOf(item.title);
+
   const all = [...grailed, ...poshmark, ...mercari].filter((sale) => {
+    if (garment) {
+      const saleGarment = garmentOf(sale.title);
+      // An unlabelled sold title is kept: plenty read "Dior Homme AW03 Luster"
+      // with no noun at all, and dropping them would gut the sample.
+      if (saleGarment && !sameGarment(garment, saleGarment)) return false;
+    }
+
     if (terms.length === 0) return true;
     const score = scoreItem(
       { title: sale.title, platform: sale.platform } as Item,
@@ -475,5 +603,6 @@ export async function comparePrice(
     percentOfAsking,
     recent,
     unavailable,
+    garment,
   };
 }

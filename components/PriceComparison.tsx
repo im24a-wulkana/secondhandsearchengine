@@ -27,6 +27,30 @@ type Result = {
   percentOfAsking: number;
   recent: SoldListing[];
   unavailable: Platform[];
+  garment: Garment | null;
+};
+
+type Garment =
+  | 'outerwear' | 'hoodie' | 'knitwear' | 'shirt' | 'tee' | 'longsleeve'
+  | 'jeans' | 'pants' | 'shorts' | 'skirt' | 'dress' | 'footwear'
+  | 'bag' | 'accessory';
+
+/** Plural, lowercase, for reading inside a sentence. */
+const GARMENT_LABEL: Record<Garment, string> = {
+  outerwear: 'jackets and coats',
+  hoodie: 'hoodies',
+  knitwear: 'knitwear',
+  shirt: 'shirts',
+  tee: 'tees',
+  longsleeve: 'long sleeves',
+  jeans: 'jeans',
+  pants: 'pants',
+  shorts: 'shorts',
+  skirt: 'skirts',
+  dress: 'dresses',
+  footwear: 'footwear',
+  bag: 'bags',
+  accessory: 'accessories',
 };
 
 const VERDICT = {
@@ -224,7 +248,8 @@ export default function PriceComparison({ item }: { item: Item }) {
 
                 <div>
                   <h3 className="eyebrow mb-2">
-                    Based on <span className="tnum">{result.sampleSize}</span> sales
+                    Based on <span className="tnum">{result.sampleSize}</span>{' '}
+                    {result.garment ? `${GARMENT_LABEL[result.garment]} sold` : 'sales'}
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(result.byPlatform).map(([id, count]) => (
@@ -274,7 +299,9 @@ export default function PriceComparison({ item }: { item: Item }) {
 
                 <p className="border-t border-[var(--hairline)] pt-3 text-xs text-[var(--text-faint)]">
                   {missingNote && <>{missingNote} </>}
-                  Comparables are matched on title, so condition and exact variant may differ.
+                  {result.garment
+                    ? 'Comparables are limited to the same kind of garment, but condition and exact variant may still differ.'
+                    : 'Comparables are matched on title, so condition and exact variant may differ.'}
                 </p>
               </div>
             )}
