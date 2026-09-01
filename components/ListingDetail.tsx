@@ -302,7 +302,11 @@ export default function ListingDetail({
               )}
             </div>
 
-            <AuthenticityCheck item={item} />
+            <AuthenticityCheck
+              item={item}
+              images={gallery}
+              imagesLoading={needsDetail && extra === null}
+            />
 
             {item.proxy && (
               <p className="rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--bg-subtle)] px-3 py-2 text-xs text-[var(--text-muted)]">

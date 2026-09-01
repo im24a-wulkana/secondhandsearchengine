@@ -310,6 +310,13 @@ level before searching, because a wrong brand guess makes the search useless.
 
 A button on any opened listing, shown only to signed-in users.
 
+It reads up to **5 photos** — the ones on screen, not just the search
+thumbnail. Grailed and Mercari return a single cover shot in search and fetch
+the rest when the modal opens, so the button stays disabled ("Loading photos…")
+until that gallery arrives. Without passing the fetched gallery down, the check
+was analysing one image and reporting "only one image, front only" on listings
+that clearly showed seven.
+
 **Speed.** A quick check takes about **35 seconds**; adding brand research
 takes **two to three minutes**. Profiling showed why: image downloads cost
 ~0.5s and the model call ~15s, but web search alone accounts for ~157s. So

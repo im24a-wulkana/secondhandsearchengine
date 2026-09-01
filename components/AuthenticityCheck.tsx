@@ -22,7 +22,21 @@ const SEVERITY_STYLE: Record<Concern['severity'], string> = {
   low: 'border-[var(--hairline-strong)] text-[var(--text-muted)]',
 };
 
-export default function AuthenticityCheck({ item }: { item: Item }) {
+export default function AuthenticityCheck({
+  item,
+  images,
+  imagesLoading = false,
+}: {
+  item: Item;
+  /**
+   * The photos actually on screen. Grailed and Mercari return one thumbnail in
+   * search and fetch the rest on open, so `item.images` alone would send a
+   * single cover shot even once the full gallery is visible.
+   */
+  images?: string[];
+  /** True while the on-demand gallery is still being fetched. */
+  imagesLoading?: boolean;
+}) {
   const { user, isLoading: sessionLoading } = useSession();
   const [result, setResult] = useState<Result | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +61,12 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
           currency: item.currency,
           platform: item.platform,
           description: item.description,
-          images: item.images?.length ? item.images : [item.image_url],
+          images:
+            images?.length
+              ? images
+              : item.images?.length
+                ? item.images
+                : [item.image_url],
           deepResearch,
         }),
       });
@@ -83,11 +102,20 @@ export default function AuthenticityCheck({ item }: { item: Item }) {
       <button
         type="button"
         onClick={() => run(false)}
-        disabled={isLoading}
+        disabled={isLoading || imagesLoading}
         className="btn btn-secondary w-full text-sm"
+        title={imagesLoading ? 'Waiting for the full photo set…' : undefined}
       >
-        {isLoading ? <Loader2 size={15} className="animate-spin" /> : <ShieldQuestion size={15} />}
-        {isLoading ? 'Checking photos…' : 'Check for counterfeit signs'}
+        {isLoading || imagesLoading ? (
+          <Loader2 size={15} className="animate-spin" />
+        ) : (
+          <ShieldQuestion size={15} />
+        )}
+        {isLoading
+          ? 'Checking photos…'
+          : imagesLoading
+            ? 'Loading photos…'
+            : 'Check for counterfeit signs'}
       </button>
 
       {open && (
