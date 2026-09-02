@@ -64,7 +64,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, reason: 'bad-response' }, { status: 200 });
     }
 
-    return NextResponse.json({ success: true, shortUrl: short });
+    // The shortener builds this from the forwarded request and hands back an
+    // http:// address. Its host redirects to https anyway, so upgrade here to
+    // save the extra hop and avoid sharing a link browsers flag as insecure.
+    const secure = short.replace(/^http:\/\//i, 'https://');
+
+    return NextResponse.json({ success: true, shortUrl: secure });
   } catch {
     // Timeout, DNS failure, connection refused — all non-fatal.
     return NextResponse.json({ success: false, reason: 'unreachable' }, { status: 200 });
