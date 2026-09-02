@@ -46,18 +46,38 @@ export default function ShareButton({ item }: { item: Item }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={copy}
-      className="btn btn-secondary flex-1 whitespace-nowrap"
-      title="Copy a link to this listing on OneRail"
-    >
-      {state === 'copied' ? (
-        <Check size={16} className="text-[var(--ok)]" />
-      ) : (
-        <LinkIcon size={16} />
+    <div className="relative">
+      {/* An icon alone gives no sign the copy worked, so the confirmation
+          floats below rather than widening the button. */}
+      {state !== 'idle' && (
+        <span className="pointer-events-none absolute right-0 top-full z-30 mt-1 whitespace-nowrap rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)] shadow-[var(--shadow-sm)]">
+          {state === 'copied' ? 'Link copied' : 'Press Ctrl/⌘ + C'}
+        </span>
       )}
-      {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy link'}
-    </button>
+      <button
+        type="button"
+        onClick={copy}
+        className="btn btn-ghost btn-icon !p-2"
+        aria-label="Copy a link to this listing on OneRail"
+        title={
+          state === 'copied'
+            ? 'Link copied'
+            : state === 'failed'
+              ? 'Press Ctrl/⌘ + C to copy'
+              : 'Copy link to this listing'
+        }
+      >
+        {state === 'copied' ? (
+          <Check size={17} className="text-[var(--ok)]" />
+        ) : (
+          <LinkIcon size={17} />
+        )}
+        {/* The confirmation still needs to reach a screen reader now that the
+            label is gone. */}
+        <span className="sr-only" role="status">
+          {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed' : ''}
+        </span>
+      </button>
+    </div>
   );
 }

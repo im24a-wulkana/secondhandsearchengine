@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Heart, ImageOff, Maximize2, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Heart, ImageOff, Maximize2, X } from 'lucide-react';
 import type { Item } from '@/lib/types';
 import { PLATFORMS, formatPrice, relativeTime } from '@/lib/platforms';
 import AuthenticityCheck from './AuthenticityCheck';
@@ -221,15 +221,44 @@ export default function ListingDetail({
           {/* Details */}
           <div className="flex min-w-0 flex-col gap-4">
             <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: platform.color }}
-                  aria-hidden="true"
-                />
-                {platform.label}
-                {listed && <span className="font-normal text-[var(--text-faint)]">· {listed}</span>}
-              </span>
+              {/* Room kept clear of the close button, which floats top-right
+                  over the whole dialog. */}
+              <div className="flex items-start justify-between gap-3 pr-10">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: platform.color }}
+                    aria-hidden="true"
+                  />
+                  {platform.label}
+                  {listed && (
+                    <span className="font-normal text-[var(--text-faint)]">· {listed}</span>
+                  )}
+                </span>
+
+                <div className="-mt-1.5 flex shrink-0 items-center gap-1">
+                  {onFavoriteToggle && (
+                    <button
+                      type="button"
+                      onClick={() => onFavoriteToggle(item)}
+                      aria-pressed={isFavorite}
+                      aria-label={isFavorite ? 'Remove from saved' : 'Save this listing'}
+                      title={isFavorite ? 'Saved' : 'Save'}
+                      className="btn btn-ghost btn-icon !p-2"
+                    >
+                      <Heart
+                        size={17}
+                        className={
+                          isFavorite ? 'fill-[var(--danger)] stroke-[var(--danger)]' : ''
+                        }
+                      />
+                    </button>
+                  )}
+                  {/* Shares the gallery and description fetched above, not the
+                      thinner search payload, so the recipient sees every photo. */}
+                  <ShareButton item={{ ...item, images: gallery, description }} />
+                </div>
+              </div>
 
               <h2 id="listing-title" className="mt-2 font-display text-xl leading-snug sm:text-2xl">
                 {item.title}
@@ -270,49 +299,38 @@ export default function ListingDetail({
             </dl>
 
             {description && (
-              <div>
-                <h3 className="eyebrow mb-1.5">Description</h3>
-                <p className="thin-scroll max-h-48 overflow-y-auto whitespace-pre-line text-sm leading-relaxed text-[var(--text-muted)]">
+              /* Collapsed by default: a long description used to hold open a
+                 fixed 12rem scroll box, which clipped mid-sentence and left
+                 dead space under short ones. `details` brings its own keyboard
+                 and screen-reader behaviour, so no state is needed. */
+              <details className="group border-y border-[var(--hairline)] py-2.5">
+                <summary className="flex min-h-[34px] cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden sm:min-h-0">
+                  <span className="eyebrow">Description</span>
+                  <ChevronDown
+                    size={16}
+                    className="shrink-0 text-[var(--text-faint)] transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <p className="mt-2.5 whitespace-pre-line text-sm leading-relaxed text-[var(--text-muted)]">
                   {description}
                 </p>
-              </div>
+              </details>
             )}
 
-            {/* Three buttons on one line squeezed the primary until its label
-                wrapped, leaving it taller than the two beside it. The buy
-                action keeps its own full-width row; Save and Copy link share
-                the next one. */}
-            <div className="mt-auto flex flex-col gap-2 pt-3">
-              <a
-                href={item.external_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary w-full whitespace-nowrap"
-              >
-                {item.proxy ? `Buy via ${item.proxy.service}` : `View on ${platform.label}`}
-                <ExternalLink size={15} />
-              </a>
-
-              <div className="flex gap-2">
-                {onFavoriteToggle && (
-                  <button
-                    type="button"
-                    onClick={() => onFavoriteToggle(item)}
-                    aria-pressed={isFavorite}
-                    className="btn btn-secondary flex-1 whitespace-nowrap"
-                  >
-                    <Heart
-                      size={16}
-                      className={isFavorite ? 'fill-[var(--danger)] stroke-[var(--danger)]' : ''}
-                    />
-                    {isFavorite ? 'Saved' : 'Save'}
-                  </button>
-                )}
-                {/* Shares the gallery and description fetched above, not the
-                    thinner search payload, so the recipient sees every photo. */}
-                <ShareButton item={{ ...item, images: gallery, description }} />
-              </div>
-            </div>
+            {/* Save and share moved up beside the platform label, so the buy
+                action stands alone here. No `mt-auto`: pushing this block to
+                the bottom left a band of empty space on listings whose details
+                run shorter than the gallery. */}
+            <a
+              href={item.external_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary w-full whitespace-nowrap"
+            >
+              {item.proxy ? `Buy via ${item.proxy.service}` : `View on ${platform.label}`}
+              <ExternalLink size={15} />
+            </a>
 
             {/* The two analysis tools belong together, and sit closer to each
                 other than to the buy actions above. */}
