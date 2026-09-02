@@ -59,17 +59,15 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    const short = typeof data?.shortUrl === 'string' ? data.shortUrl : null;
-    if (!short || !/^https?:\/\//i.test(short)) {
+    const code = typeof data?.shortCode === 'string' ? data.shortCode.trim() : '';
+    if (!/^[0-9A-Za-z]{1,32}$/.test(code)) {
       return NextResponse.json({ success: false, reason: 'bad-response' }, { status: 200 });
     }
 
-    // The shortener builds this from the forwarded request and hands back an
-    // http:// address. Its host redirects to https anyway, so upgrade here to
-    // save the extra hop and avoid sharing a link browsers flag as insecure.
-    const secure = short.replace(/^http:\/\//i, 'https://');
-
-    return NextResponse.json({ success: true, shortUrl: secure });
+    // The shortener's own `shortUrl` points at its Railway host. Only the code
+    // is kept, and the link is rebuilt on this domain so a shared link reads as
+    // OneRail; /s/[code] resolves it back through the same service.
+    return NextResponse.json({ success: true, shortUrl: `${origin}/s/${code}` });
   } catch {
     // Timeout, DNS failure, connection refused — all non-fatal.
     return NextResponse.json({ success: false, reason: 'unreachable' }, { status: 200 });
