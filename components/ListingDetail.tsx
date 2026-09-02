@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, ExternalLink, Heart, ImageOff, Maximize2, X 
 import type { Item } from '@/lib/types';
 import { PLATFORMS, formatPrice, relativeTime } from '@/lib/platforms';
 import AuthenticityCheck from './AuthenticityCheck';
+import ShareButton from './ShareButton';
 import PriceComparison from './PriceComparison';
 
 interface ListingDetailProps {
@@ -301,6 +302,9 @@ export default function ListingDetail({
                   {isFavorite ? 'Saved' : 'Save'}
                 </button>
               )}
+              {/* Shares the gallery and description fetched above, not the
+                  thinner search payload, so the recipient sees every photo. */}
+              <ShareButton item={{ ...item, images: gallery, description }} />
             </div>
 
             <PriceComparison item={item} />
