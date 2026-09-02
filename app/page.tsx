@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import SearchBar from '@/components/SearchBar';
 import SearchHistory from '@/components/SearchHistory';
 import PopularSearches from '@/components/PopularSearches';
+import { getSessionUser } from '@/lib/auth';
 import {
   PLATFORMS,
   PLATFORM_IDS,
@@ -21,7 +22,10 @@ const SUGGESTIONS = [
   'Acne Studios knit',
 ];
 
-export default function Home() {
+export default async function Home() {
+  // The sign-up pitch is only an invitation while there is no account to make.
+  const user = await getSessionUser();
+
   return (
     <>
       <Navbar />
@@ -129,21 +133,24 @@ export default function Home() {
           </ol>
         </section>
 
-        {/* Account CTA */}
-        <section className="border-t border-[var(--hairline)] bg-[var(--bg-subtle)]">
-          <div className="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-5 px-4 py-14 sm:px-6 md:flex-row">
-            <div>
-              <h2 className="font-display text-2xl">Keep the good finds</h2>
-              <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">
-                Save listings and searches to your account, and pick up the hunt where you left it.
-              </p>
+        {/* Account CTA — nothing to offer someone who is already signed in. */}
+        {!user && (
+          <section className="border-t border-[var(--hairline)] bg-[var(--bg-subtle)]">
+            <div className="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-5 px-4 py-14 sm:px-6 md:flex-row">
+              <div>
+                <h2 className="font-display text-2xl">Keep the good finds</h2>
+                <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">
+                  Save listings and searches to your account, and pick up the hunt where you left
+                  it.
+                </p>
+              </div>
+              <Link href="/register" className="btn btn-primary shrink-0">
+                Create a free account
+                <ArrowRight size={16} />
+              </Link>
             </div>
-            <Link href="/register" className="btn btn-primary shrink-0">
-              Create a free account
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </section>
+          </section>
+        )}
 
         <footer className="border-t border-[var(--hairline)]">
           <div className="mx-auto max-w-[1400px] px-4 py-8 text-center text-xs text-[var(--text-faint)] sm:px-6">
