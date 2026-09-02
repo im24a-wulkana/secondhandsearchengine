@@ -40,7 +40,7 @@ export default function SearchHistory({ limit = 8, className = '' }: SearchHisto
         <button
           type="button"
           onClick={() => clearHistory()}
-          className="text-xs text-[var(--text-faint)] transition hover:text-[var(--accent)]"
+          className="-m-2 p-2 text-xs text-[var(--text-faint)] transition hover:text-[var(--accent)]"
         >
           Clear
         </button>
@@ -53,7 +53,7 @@ export default function SearchHistory({ limit = 8, className = '' }: SearchHisto
                 than inside, so it never nests inside an anchor. */}
             <Link
               href={`/search?q=${encodeURIComponent(record.query)}`}
-              className="rounded-l-[var(--r-pill)] border border-r-0 border-[var(--hairline)] py-1 pl-3 pr-2 text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="flex items-center rounded-l-[var(--r-pill)] border border-r-0 border-[var(--hairline)] py-2 pl-3 pr-2 text-xs sm:py-1 text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               {record.query}
             </Link>
@@ -61,7 +61,7 @@ export default function SearchHistory({ limit = 8, className = '' }: SearchHisto
               type="button"
               onClick={() => removeSearch(record.query)}
               aria-label={`Remove ${record.query} from recent searches`}
-              className="grid place-items-center rounded-r-[var(--r-pill)] border border-l-0 border-[var(--hairline)] px-1.5 text-[var(--text-faint)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
+              className="grid min-w-[34px] place-items-center rounded-r-[var(--r-pill)] border border-l-0 border-[var(--hairline)] px-1.5 text-[var(--text-faint)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
             >
               <X size={12} />
             </button>

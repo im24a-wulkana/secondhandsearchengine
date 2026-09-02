@@ -68,7 +68,7 @@ export default function ItemCard({
             onClick={() => onFavoriteToggle(item)}
             aria-pressed={isFavorite}
             aria-label={isFavorite ? `Remove ${item.title} from saved` : `Save ${item.title}`}
-            className="absolute right-2 top-2 z-20 grid h-8 w-8 place-items-center rounded-full bg-[rgba(12,10,8,0.72)] text-white backdrop-blur-sm transition-transform hover:scale-110 active:scale-95"
+            className="absolute right-2 top-2 z-20 grid h-10 w-10 place-items-center rounded-full sm:h-8 sm:w-8 bg-[rgba(12,10,8,0.72)] text-white backdrop-blur-sm transition-transform hover:scale-110 active:scale-95"
           >
             <Heart
               size={16}

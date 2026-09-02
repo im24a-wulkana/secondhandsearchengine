@@ -138,7 +138,7 @@ export default function SearchContent() {
   }
 
   return (
-    <main id="main" className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
+    <main id="main" className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-8">
       <Link
         href="/"
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] transition hover:text-[var(--accent)]"
@@ -147,12 +147,12 @@ export default function SearchContent() {
         Back to home
       </Link>
 
-      <div className="mb-8 max-w-2xl">
+      <div className="mb-5 max-w-2xl sm:mb-8">
         <SearchBar initialQuery={query} size="md" />
         <SearchHistory className="mt-4" limit={6} />
       </div>
 
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-6 sm:gap-4">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl">
             {query}
@@ -172,14 +172,18 @@ export default function SearchContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* On a phone these secondary toggles each wrapped onto their own
+            full-width row, pushing the listings themselves below the fold.
+            Scrolling them sideways keeps them reachable without spending the
+            vertical space the results need. */}
+        <div className="swipe-row -mx-4 flex w-[calc(100%+2rem)] items-center justify-start gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <SaveSearchButton query={query} filters={filters} items={items} />
 
           {(nonApparelFiltered > 0 || !apparelOnly) && (
             <button
               type="button"
               onClick={() => setApparelOnly((v) => !v)}
-              className="btn btn-ghost text-sm"
+              className="btn btn-ghost shrink-0 whitespace-nowrap text-sm"
               title={
                 apparelOnly
                   ? 'Show fragrance, cosmetics and other non-wearable listings'
@@ -201,7 +205,7 @@ export default function SearchContent() {
             <button
               type="button"
               onClick={() => setStrict((v) => !v)}
-              className="btn btn-ghost text-sm"
+              className="btn btn-ghost shrink-0 whitespace-nowrap text-sm"
               title={
                 strict
                   ? 'Show listings that only loosely match your search'
@@ -252,11 +256,11 @@ export default function SearchContent() {
 
       {/* Result-source summary: shows which marketplaces actually returned rows. */}
       {!isLoading && !error && items.length > 0 && (
-        <div className="mb-5 flex flex-wrap items-center gap-2">
+        <div className="swipe-row -mx-4 mb-5 flex w-[calc(100%+2rem)] items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           {Object.entries(counts).map(([id, count]) => (
             <span
               key={id}
-              className="inline-flex items-center gap-1.5 rounded-[var(--r-pill)] border border-[var(--hairline)] px-2.5 py-1 text-xs text-[var(--text-muted)]"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--r-pill)] border border-[var(--hairline)] px-2.5 py-1 text-xs text-[var(--text-muted)]"
             >
               <span
                 className="h-1.5 w-1.5 rounded-full"

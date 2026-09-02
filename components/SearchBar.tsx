@@ -48,7 +48,7 @@ export default function SearchBar({
           placeholder="Try “Carhartt detroit jacket” or “Rick Owens size 48”"
           /* The wrapper renders the focus ring, so suppress the input's own. */
           className={`min-w-0 flex-1 bg-transparent text-[var(--text)] outline-none focus-visible:outline-none placeholder:text-[var(--text-faint)] [&::-webkit-search-cancel-button]:hidden ${
-            large ? 'py-2.5 text-base' : 'py-1.5 text-sm'
+            large ? 'py-2.5 text-base' : 'py-2.5 text-sm sm:py-1.5'
           }`}
         />
 
@@ -59,7 +59,7 @@ export default function SearchBar({
               setQuery('');
               inputRef.current?.focus();
             }}
-            className="btn btn-ghost !p-1.5"
+            className="btn btn-ghost btn-icon !p-1.5"
             aria-label="Clear search"
           >
             <X size={16} />
@@ -68,7 +68,7 @@ export default function SearchBar({
 
         <ImageSearch />
 
-        <button type="submit" className={`btn btn-primary ${large ? '' : '!py-1.5 !px-3 text-sm'}`}>
+        <button type="submit" className={`btn btn-primary ${large ? '' : '!px-3 text-sm sm:!py-1.5'}`}>
           Search
         </button>
       </div>

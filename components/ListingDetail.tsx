@@ -138,7 +138,7 @@ export default function ListingDetail({
           type="button"
           onClick={onClose}
           aria-label="Close listing"
-          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-[var(--surface)] text-[var(--text)] shadow-[var(--shadow-sm)] transition hover:bg-[var(--bg-subtle)]"
+          className="absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full sm:h-9 sm:w-9 bg-[var(--surface)] text-[var(--text)] shadow-[var(--shadow-sm)] transition hover:bg-[var(--bg-subtle)]"
         >
           <X size={18} />
         </button>
@@ -420,7 +420,7 @@ function GalleryArrow({
       onClick={onClick}
       disabled={disabled}
       aria-label={side === 'left' ? 'Previous photo' : 'Next photo'}
-      className={`absolute top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-[rgba(12,10,8,0.6)] text-white transition hover:bg-[rgba(12,10,8,0.85)] disabled:opacity-0 ${
+      className={`absolute top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full sm:h-8 sm:w-8 bg-[rgba(12,10,8,0.6)] text-white transition hover:bg-[rgba(12,10,8,0.85)] disabled:opacity-0 ${
         side === 'left' ? 'left-2' : 'right-2'
       }`}
     >

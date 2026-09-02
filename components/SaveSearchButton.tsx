@@ -81,7 +81,7 @@ export default function SaveSearchButton({ query, filters, items }: SaveSearchBu
 
   if (!user) {
     return (
-      <Link href="/login" className="btn btn-ghost text-sm" title="Sign in to save this search">
+      <Link href="/login" className="btn btn-ghost shrink-0 whitespace-nowrap text-sm" title="Sign in to save this search">
         <BookmarkPlus size={15} />
         Save search
       </Link>
@@ -89,12 +89,12 @@ export default function SaveSearchButton({ query, filters, items }: SaveSearchBu
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex shrink-0 items-center gap-2">
       <button
         type="button"
         onClick={save}
         disabled={state !== 'idle'}
-        className="btn btn-ghost text-sm"
+        className="btn btn-ghost shrink-0 whitespace-nowrap text-sm"
         title={state === 'saved' ? 'Already in your saved searches' : 'Save this search'}
       >
         {state === 'saving' ? (

@@ -33,7 +33,7 @@ export default function PopularSearches({ initial }: { initial: string[] }) {
         <Link
           key={term}
           href={`/search?q=${encodeURIComponent(term)}`}
-          className="rounded-[var(--r-pill)] border border-[var(--hairline)] px-3 py-1 text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="inline-flex items-center rounded-[var(--r-pill)] border border-[var(--hairline)] px-3 py-2 text-xs sm:py-1 text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           {term}
         </Link>

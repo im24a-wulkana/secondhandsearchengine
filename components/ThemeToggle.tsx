@@ -50,7 +50,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="btn btn-ghost !p-2"
+      className="btn btn-ghost btn-icon !p-2"
       aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
     >
       {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}

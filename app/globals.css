@@ -233,6 +233,15 @@ body {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
+  /* Touch pointers get the 44px target Apple and Android both ask for. Keyed
+     off the pointer rather than a breakpoint, so a small laptop window keeps
+     its tighter mouse-sized controls. */
+  @media (pointer: coarse) {
+    .field {
+      min-height: 44px;
+    }
+  }
+
   .field::placeholder {
     color: var(--text-faint);
   }
@@ -260,6 +269,18 @@ body {
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease,
       color 0.15s ease, transform 0.1s ease;
+  }
+
+  @media (pointer: coarse) {
+    .btn {
+      min-height: 44px;
+    }
+
+    /* Icon-only buttons are square, so the width has to come up too. Those are
+       the worst offenders on a phone: the theme toggle and menu were 36-38px. */
+    .btn-icon {
+      min-width: 44px;
+    }
   }
 
   .btn:active {
@@ -380,5 +401,19 @@ body {
   .thin-scroll {
     scrollbar-width: thin;
     scrollbar-color: var(--hairline-strong) transparent;
+  }
+
+  /* A row of chips or toggles that swipes sideways on a phone. The bar itself
+     is hidden: it would sit under the row and read as a stray rule, and the
+     partially-visible last chip already signals that there is more to see. */
+  .swipe-row {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .swipe-row::-webkit-scrollbar {
+    display: none;
   }
 }
