@@ -278,42 +278,53 @@ export default function ListingDetail({
               </div>
             )}
 
-            <div className="mt-auto flex flex-col gap-2 pt-2 sm:flex-row">
+            {/* Three buttons on one line squeezed the primary until its label
+                wrapped, leaving it taller than the two beside it. The buy
+                action keeps its own full-width row; Save and Copy link share
+                the next one. */}
+            <div className="mt-auto flex flex-col gap-2 pt-3">
               <a
                 href={item.external_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary flex-1"
+                className="btn btn-primary w-full whitespace-nowrap"
               >
                 {item.proxy ? `Buy via ${item.proxy.service}` : `View on ${platform.label}`}
                 <ExternalLink size={15} />
               </a>
-              {onFavoriteToggle && (
-                <button
-                  type="button"
-                  onClick={() => onFavoriteToggle(item)}
-                  aria-pressed={isFavorite}
-                  className="btn btn-secondary"
-                >
-                  <Heart
-                    size={16}
-                    className={isFavorite ? 'fill-[var(--danger)] stroke-[var(--danger)]' : ''}
-                  />
-                  {isFavorite ? 'Saved' : 'Save'}
-                </button>
-              )}
-              {/* Shares the gallery and description fetched above, not the
-                  thinner search payload, so the recipient sees every photo. */}
-              <ShareButton item={{ ...item, images: gallery, description }} />
+
+              <div className="flex gap-2">
+                {onFavoriteToggle && (
+                  <button
+                    type="button"
+                    onClick={() => onFavoriteToggle(item)}
+                    aria-pressed={isFavorite}
+                    className="btn btn-secondary flex-1 whitespace-nowrap"
+                  >
+                    <Heart
+                      size={16}
+                      className={isFavorite ? 'fill-[var(--danger)] stroke-[var(--danger)]' : ''}
+                    />
+                    {isFavorite ? 'Saved' : 'Save'}
+                  </button>
+                )}
+                {/* Shares the gallery and description fetched above, not the
+                    thinner search payload, so the recipient sees every photo. */}
+                <ShareButton item={{ ...item, images: gallery, description }} />
+              </div>
             </div>
 
-            <PriceComparison item={item} />
+            {/* The two analysis tools belong together, and sit closer to each
+                other than to the buy actions above. */}
+            <div className="flex flex-col gap-2">
+              <PriceComparison item={item} />
 
-            <AuthenticityCheck
-              item={item}
-              images={gallery}
-              imagesLoading={needsDetail && extra === null}
-            />
+              <AuthenticityCheck
+                item={item}
+                images={gallery}
+                imagesLoading={needsDetail && extra === null}
+              />
+            </div>
 
             {item.proxy && (
               <p className="rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--bg-subtle)] px-3 py-2 text-xs text-[var(--text-muted)]">

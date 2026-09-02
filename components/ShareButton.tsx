@@ -49,7 +49,7 @@ export default function ShareButton({ item }: { item: Item }) {
     <button
       type="button"
       onClick={copy}
-      className="btn btn-secondary"
+      className="btn btn-secondary flex-1 whitespace-nowrap"
       title="Copy a link to this listing on OneRail"
     >
       {state === 'copied' ? (
